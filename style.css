@@ -16,4 +16,65 @@ img {
 .container {
     padding: 2px 16px;
 }
- 
+
+body {
+    display: flex;
+    height: 100vh;
+    /* Ensure full viewport height */
+    margin: 0;
+    /* Remove default margins */
+}
+
+.side-nav {
+    width: 200px;
+    /* Adjust width as needed */
+    background-color: #f0f0f0;
+    /* Example background color */
+    padding: 20px;
+}
+
+.side-nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+.side-nav li {
+    margin-bottom: 10px;
+}
+
+.main-content {
+    flex: 1;
+    /* Takes up remaining space */
+    padding: 20px;
+    /* Add padding to the main content area */
+    overflow-y: auto;
+    /* Add scroll if content is too long*/
+}
+
+
+body {
+    display: flex;
+    height: 100vh;
+    margin: 0;
+}
+
+.side-nav {
+    width: 200px;
+    background-color: #f0f0f0;
+    padding: 20px;
+}
+
+.side-nav ul {
+    list-style: none;
+    padding: 0;
+}
+
+.side-nav li {
+    margin-bottom: 10px;
+}
+
+.main-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}

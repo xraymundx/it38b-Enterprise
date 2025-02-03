@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enterprise Systems</title>
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
@@ -14,28 +15,29 @@
             <a href="" class="flex items-center space-x-3 rtl:space-x-reverse">
                 <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Dashboard</span>
             </a>
-            <div class="flex items-center space-x-6 rtl:space-x-reverse">
-                <a href="#" class="text-sm text-white-600 dark:text-blue-500 hover:underline">Login</a>
-            </div>
+            
         </div>
     </nav>
-    <nav class="bg-gray-50 dark:bg-gray-700">
-        <div class="max-w-screen-xl px-4 py-3 mx-auto">
-            <div class="flex items-center">
-                <ul class="flex flex-row font-medium mt-0 space-x-8 rtl:space-x-reverse text-sm">
-                    <li>
-                        <a href="index.html" class="text-gray-900 dark:text-white hover:underline"
-                            aria-current="page">Home</a>
-                    </li>
-                    <li>
-                        <a href="users.html" class="text-gray-900 dark:text-white hover:underline">Users</a>
-                    </li>
 
-                </ul>
+    <div class="flex">  <nav class="side-nav bg-gray-50 dark:bg-gray-700">
+            <ul class="font-medium mt-0 text-sm">
+                <li>
+                    <a href="index.html" class="text-gray-900 dark:text-white hover:underline" aria-current="page">Home</a>
+                </li>
+                <li>
+                    <a href="users.html" class="text-gray-900 dark:text-white hover:underline">Users</a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="main-content">
+            <div class="front-page">
+            
             </div>
         </div>
-    </nav>
- <div class="front-page"></div>
+    </div>
+
+
 </body>
 
 </html>
