@@ -44,6 +44,16 @@ body {
     position: fixed;
   }
   
+.stickybtn{
+  position: fixed;
+  margin-bottom: 50px;
+  padding-bottom: 50px;
+}
+
+.maincontainer{
+  margin-top: 80px;
+}
+
   @media screen and (max-height: 450px) {
     .sidenav {padding-top: 15px;}
     .sidenav a {font-size: 18px;}
