@@ -28,7 +28,7 @@ body {
 .side-nav {
     width: 200px;
     /* Adjust width as needed */
-    background-color: #f0f0f0;
+    background-color: #000000;
     /* Example background color */
     padding: 20px;
 }
@@ -49,13 +49,6 @@ body {
     /* Add padding to the main content area */
     overflow-y: auto;
     /* Add scroll if content is too long*/
-}
-
-
-body {
-    display: flex;
-    height: 100vh;
-    margin: 0;
 }
 
 .side-nav {
