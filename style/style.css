@@ -1,73 +1,50 @@
-.card {
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-    transition: 0.3s;
-    border-radius: 5px;
-}
-
-img {
-    border-radius: 5px 5px 0 0;
-}
-
-
-.card:hover {
-    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
-}
-
-.container {
-    padding: 2px 16px;
-}
 
 body {
-    display: flex;
-    height: 100vh;
-    /* Ensure full viewport height */
-    margin: 0;
-    /* Remove default margins */
-}
+    font-family: "Lato", sans-serif;
+  }
 
-.side-nav {
-    width: 200px;
-    /* Adjust width as needed */
-    background-color: #000000;
-    /* Example background color */
+.sidenav {
+    height: 100%;
+    width: 250px; 
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color: #111;
+    overflow-x: hidden;
+    transition: 0.5s;
+    padding-top: 60px; 
+  }
+  
+  .sidenav a {
+    padding: 8px 8px 8px 32px;
+    text-decoration: none;
+    font-size: 25px;
+    color: #818181;
+    display: block;
+    transition: 0.3s;
+  }
+  
+  .sidenav a:hover {
+    color: #f1f1f1;
+  }
+  
+  .sidenav .closebtn {
+    position: absolute;
+    top: 0;
+    right: 25px;
+    font-size: 36px;
+    margin-left: 50px;
+  }
+  
+  .main {
+    margin-left: 250px; 
+    transition: 0.5s; 
     padding: 20px;
-}
-
-.side-nav ul {
-    list-style: none;
-    padding: 0;
-}
-
-.side-nav li {
-    margin-bottom: 10px;
-}
-
-.main-content {
-    flex: 1;
-    /* Takes up remaining space */
-    padding: 20px;
-    /* Add padding to the main content area */
-    overflow-y: auto;
-    /* Add scroll if content is too long*/
-}
-
-.side-nav {
-    width: 200px;
-    background-color: #f0f0f0;
-    padding: 20px;
-}
-
-.side-nav ul {
-    list-style: none;
-    padding: 0;
-}
-
-.side-nav li {
-    margin-bottom: 10px;
-}
-
-.main-content {
-    flex: 1;
-    padding: 20px;
-    overflow-y: auto;
-}
+    position: fixed;
+  }
+  
+  @media screen and (max-height: 450px) {
+    .sidenav {padding-top: 15px;}
+    .sidenav a {font-size: 18px;}
+  }
