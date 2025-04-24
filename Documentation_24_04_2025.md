@@ -28,3 +28,4 @@
 - Set up the Login/Register functions of the Application.
 - Collaborate with other developers (e.g., Jonard Pinalas) to ensure smooth integration of different modules.
 - Regularly commit and push code changes to the designated repository.
+Github Branch: https://github.com/Danmark12/it38b-Enterprise/tree/feature/login
