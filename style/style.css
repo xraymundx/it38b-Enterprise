@@ -1,60 +1,104 @@
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
 body {
-    font-family: "Lato", sans-serif;
-  }
-
-.sidenav {
-    height: 100%;
-    width: 250px; 
-    position: fixed;
-    z-index: 1;
-    top: 0;
-    left: 0;
-    background-color: #111;
-    overflow-x: hidden;
-    transition: 0.5s;
-    padding-top: 60px; 
-  }
-  
-  .sidenav a {
-    padding: 8px 8px 8px 32px;
-    text-decoration: none;
-    font-size: 25px;
-    color: #818181;
-    display: block;
-    transition: 0.3s;
-  }
-  
-  .sidenav a:hover {
-    color: #f1f1f1;
-  }
-  
-  .sidenav .closebtn {
-    position: absolute;
-    top: 0;
-    right: 25px;
-    font-size: 36px;
-    margin-left: 50px;
-  }
-  
-  .main {
-    margin-left: 250px; 
-    transition: 0.5s; 
-    padding: 20px;
-    position: fixed;
-  }
-  
-.stickybtn{
-  position: fixed;
-  margin-bottom: 50px;
-  padding-bottom: 50px;
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
 }
 
-.maincontainer{
-  margin-top: 80px;
+/* Header Styles */
+header {
+  background: url('https://img.freepik.com/free-photo/beautiful-young-female-doctor-looking-camera-office_1301-7807.jpg?semt=ais_hybrid&w=740') no-repeat center center/cover;
+  color: white;
+  text-align: center;
+  padding: 100px 20px;
 }
 
-  @media screen and (max-height: 450px) {
-    .sidenav {padding-top: 15px;}
-    .sidenav a {font-size: 18px;}
-  }
+header .logo {
+  width: 150px;
+  margin-bottom: 20px;
+}
+
+header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+header p {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+header .btn {
+  padding: 10px 20px;
+  background-color: #007BFF;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+}
+
+/* Features Section */
+#features {
+  padding: 50px 20px;
+  background-color: #f4f4f4;
+  text-align: center;
+}
+
+#features h2 {
+  margin-bottom: 20px;
+}
+
+#features ul {
+  list-style: none;
+  padding: 0;
+}
+
+#features li {
+  margin: 10px 0;
+}
+
+/* Contact Section */
+#contact {
+  padding: 50px 20px;
+  text-align: center;
+}
+
+#contact form {
+  max-width: 500px;
+  margin: 0 auto;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#contact input,
+#contact button {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+#contact button {
+  background-color: #28a745;
+  color: white;
+  cursor: pointer;
+}
+
+#contact button:hover {
+  background-color: #218838;
+}
+
+/* Footer Styles */
+footer {
+  text-align: center;
+  padding: 20px;
+  background-color: #333;
+  color: white;
+}
