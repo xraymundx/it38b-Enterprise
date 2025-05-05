@@ -2,155 +2,137 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nurse Dashboard</title>
-    <link rel="stylesheet" href="../../style/style.css">
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f3f4f6;
             margin: 0;
+            font-family: 'Poppins', sans-serif;
+            /* Apply Poppins font */
+            background-color: #f3f4f6;
+            /* Light gray background */
         }
 
         .toolbar {
-            background-color: white;
-            color: black;
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
             position: fixed;
             top: 0;
             left: 0;
+            height: 64px;
             width: 100%;
-            z-index: 2;
+            background-color: white;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-            transition: left 0.3s, width 0.3s;
-            /* Add transition for smooth adjustment */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1rem;
+            transition: left 0.3s ease, width 0.3s ease;
+            z-index: 1000;
+            color: #111827;
+            box-sizing: border-box;
+            flex-wrap: wrap;
+            /* Important for allowing stacking on small screens */
         }
 
         .toolbar.open {
             left: 280px;
-            /* Shift toolbar to the right when sidenav is open */
             width: calc(100% - 280px);
-            /* Reduce width to avoid covering sidenav */
         }
 
         .toolbar-left {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 1rem;
+            min-width: 0;
+            /* Prevents overflow issues with long titles */
         }
 
+        /* 🔧 Menu Button */
         .toolbar-left button {
             background: none;
             border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #4b5563;
-            /* Gray 600 */
             padding: 0;
-            margin: 0;
-            outline: none;
-        }
-
-        .toolbar-left h2 {
-            font-size: 1.5rem;
-            margin: 0;
-            font-weight: 500;
-            text-transform: capitalize;
-            /* Add to capitalize the title */
-        }
-
-        .toolbar-search {
-            background-color: #f3f4f6;
-            /* Light gray */
-            border-radius: 6px;
-            padding: 8px 12px;
+            font-size: 2rem;
+            color: #111827;
+            cursor: pointer;
             display: flex;
             align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease;
+            flex-shrink: 0;
+            /* Prevent shrinking */
+        }
+
+        .toolbar-left button .material-symbols-outlined {
+            font-size: inherit;
+        }
+
+        /* 🔍 Search */
+        .toolbar-search {
+            display: flex;
+            align-items: center;
+            background-color: #f3f4f6;
+            padding: 6px 12px;
+            border-radius: 8px;
             gap: 8px;
+            min-width: 0;
+            margin-left: 1rem;
+
+        }
+
+        .toolbar-search input {
+            border: none;
+            background: transparent;
+            outline: none;
+            flex: 1;
+            font-size: 1rem;
+            /* Adjusted font size for Poppins */
+            color: #374151;
+            min-width: 0;
+            /* Important for preventing input overflow */
         }
 
         .toolbar-search .material-symbols-outlined {
             font-size: 1.2rem;
             color: #6b7280;
-            /* Gray 500 */
+            flex-shrink: 0;
+            /* Prevent shrinking */
         }
 
-        .toolbar-search input[type="text"] {
-            border: none;
-            background: none;
-            outline: none;
-            font-size: 1rem;
-            color: #374151;
-            /* Gray 700 */
-        }
-
+        /* ⚙️ Actions */
         .toolbar-actions {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 1rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+            /* Prevent shrinking */
         }
 
-        .toolbar-actions button {
-            background: none;
-            border: 1px solid #6b7280;
-            /* Gray 500 */
-            color: #6b7280;
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            outline: none;
-        }
-
-        .toolbar-actions .notification {
-            position: relative;
+        .toolbar-actions button:hover {
+            background-color: #e5e7eb;
         }
 
         .toolbar-actions .notification .material-symbols-outlined {
-            font-size: 1.5rem;
+            font-size: 2rem;
             color: #4b5563;
-            /* Gray 600 */
-        }
-
-        .toolbar-actions .notification::after {
-            content: '';
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: red;
-            color: white;
-            font-size: 0.7rem;
-            border-radius: 50%;
-            width: 14px;
-            height: 14px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
 
         .sidenav {
+            position: fixed;
+            left: 0;
+            top: 0;
             height: 100%;
             width: 0;
-            /* Initially hidden */
-            position: fixed;
-            z-index: 1;
-            top: 0;
-            left: 0;
-            background: linear-gradient(to bottom, #000144 46%, #000144 67%, #0002AA 100%);
-            color: white;
-            /* Default text color for sidenav */
             overflow-x: hidden;
-            transition: 0.3s;
-            padding-top: 20px;
+            background: linear-gradient(to bottom, #000144 46%, #000144 67%, #0002AA 100%);
+            /* Dark blue gradient */
+            color: white;
+            /* White sidenav text */
+            transition: width 0.3s ease;
+            z-index: 1001;
             display: flex;
             flex-direction: column;
         }
@@ -160,155 +142,283 @@
         }
 
         .sidenav-header {
-            padding: 20px;
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
+            align-items: center;
+            padding: 20px;
+            /* Adjusted padding */
+            background-color: rgba(0, 0, 0, 0.2);
+            /* Darker header background */
         }
 
         .sidenav-header h1 {
-            font-size: 2rem;
-            /* Increased by 5px from 1.5rem */
             margin: 0;
-            color: white;
-            /* Default white for the whole text if no span */
-        }
-
-        .sidenav-header h1 span.mf {
-            color: #00B4D8;
-        }
-
-        .sidenav-header h1 span.clinic {
+            font-size: 2rem;
+            /* Retained size */
             color: white;
         }
 
         .sidenav-header .closebtn {
-            color: white;
             font-size: 2rem;
-            cursor: pointer;
+            /* Adjusted size */
+            color: white;
             text-decoration: none;
+            cursor: pointer;
         }
 
         .sidenav-item {
-            padding: 10px 20px;
-            text-decoration: none;
-            font-size: 1rem;
+            padding: 20px 20px;
+            margin: 5px 10px;
             color: white;
-            /* Explicitly set text color to white */
             display: flex;
             align-items: center;
             gap: 10px;
+            text-decoration: none;
             transition: background-color 0.2s ease;
         }
 
-        .sidenav-item:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            /* Slightly lighter overlay on hover */
-            color: white;
-            /* Ensure text remains white on hover */
-        }
-
+        .sidenav-item:hover,
         .sidenav-item.active {
             background-color: #0ea5e9;
-            /* Sky 500 */
-            font-weight: 500;
             color: white;
-            /* Ensure active text is white */
+            border-radius: 8px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+
+        .sidenav-content {
+            margin: 30px 0 0 0;
+            /* Adjusted padding */
+            overflow-y: auto;
+            flex: 1;
         }
 
         .sidenav-footer {
             margin-top: auto;
-            padding: 20px;
-            background-color: rgba(0, 0, 0, 0.2);
-            /* Slightly darker overlay for footer */
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            /* Push the footer to the bottom */
+            padding: 1.2rem;
+            background-color: white;
+            border-top: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(5px);
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .sidenav-footer>*::-webkit-scrollbar {
+            display: none;
         }
 
         .user-info {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 0.75rem;
+            margin-bottom: 0;
         }
 
         .user-info img {
-            width: 40px;
-            height: 40px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             object-fit: cover;
         }
 
         .user-details {
-            font-size: 0.9rem;
-            color: white;
-            /* Explicitly set user details text to white */
+            font-size: 0.85rem;
+            color: #374151;
+            font-family: 'Poppins', sans-serif;
+            /* Apply Poppins font */
         }
 
         .user-details strong {
             display: block;
+            font-weight: 500;
+            color: black;
+            font-family: 'Poppins', sans-serif;
+            /* Apply Poppins font */
         }
 
-        .sidenav-footer a {
+        .sidenav-footer-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidenav-footer-options a {
             display: flex;
             align-items: center;
-            gap: 10px;
-            color: white;
-            /* Explicitly set footer link text to white */
+            gap: 0.5rem;
+            color: #4b5563;
             text-decoration: none;
             font-size: 0.9rem;
-            padding: 8px 15px;
-            border-radius: 5px;
-            transition: background-color 0.2s ease;
+            padding: 0.5rem 0;
+            border-radius: 4px;
+            transition: background-color 0.15s ease-in-out;
+            font-family: 'Poppins', sans-serif;
+            /* Apply Poppins font */
         }
 
-        .sidenav-footer a:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            /* Slightly lighter overlay on hover */
-            color: white;
-            /* Ensure text remains white on hover */
+        .sidenav-footer-options a:hover {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        .sidenav-footer-options a .material-symbols-outlined {
+            font-size: 1.1rem;
+        }
+
+        /* Hide any other links directly within sidenav-footer if they exist */
+        .sidenav-footer>a {
+            display: none !important;
         }
 
         .main {
             margin-left: 0;
-            /* Initially no margin */
-            padding: 20px;
-            padding-top: 70px;
-            /* Adjust top padding to avoid overlap with toolbar */
-            transition: margin-left 0.3s;
+            padding: 80px 1rem 1rem;
+            /* Adjusted top and side padding */
+            transition: margin-left 0.3s ease;
         }
 
         .main.open {
             margin-left: 280px;
-            padding-top: 70px;
-            /* Maintain top padding when sidenav is open */
+            padding-top: 80px;
+            /* Adjusted top padding */
         }
 
-        .maincontainer {
-            margin-top: 20px;
+        .toolbar.open {
+            left: 280px;
+            width: calc(100% - 280px);
         }
 
         @media screen and (max-width: 768px) {
-            .toolbar.open {
-                left: 100%;
-                /* Move toolbar off-screen when sidenav is full width */
-                width: 0;
+            .sidenav.open {
+                width: 100%;
             }
 
             .main.open {
-                margin-left: 100%;
-                padding-top: 70px;
-                /* Maintain top padding */
+                margin-left: 0;
             }
+
+            .toolbar.open {
+                left: 0;
+                width: 100%;
+            }
+
+            .toolbar {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0.3rem 0.5rem;
+                /* Further reduced padding */
+                height: auto;
+                gap: 0.3rem;
+                /* Further reduced gap */
+                flex-wrap: nowrap;
+            }
+
+            .toolbar-left {
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+                /* Reduced gap */
+                margin-bottom: 0;
+            }
+
+            .toolbar-left h2 {
+                font-size: 1.5rem;
+
+            }
+
+            .toolbar-left button {
+                font-size: 1.3rem;
+                /* Slightly smaller menu icon to balance */
+            }
+
+            .toolbar-search {
+                display: flex;
+                align-items: center;
+                margin: 0;
+                padding: 0.2rem 0.4rem;
+                /* Further reduced padding */
+                background-color: #e5e7eb;
+                border-radius: 6px;
+                flex-grow: 1;
+            }
+
+            .toolbar-search input {
+                font-size: 0.8rem;
+                /* Smaller font size for input */
+                padding-left: 0.3rem;
+                /* Adjust input padding */
+            }
+
+            .toolbar-search input::placeholder {
+                color: #6b7280;
+                font-size: 0.8rem;
+                /* Smaller placeholder font */
+            }
+
+            .toolbar-search .material-symbols-outlined {
+                font-size: 1rem;
+                /* Smaller search icon */
+                margin-right: 0.2rem;
+                /* Adjust icon margin */
+            }
+
+            .toolbar-actions {
+                display: flex;
+                align-items: center;
+                gap: 0.3rem;
+                /* Reduced gap */
+            }
+
+            .toolbar-actions .notification .material-symbols-outlined {
+                font-size: 1.5rem;
+                /* Smaller notification icon */
+            }
+        }
+
+        .material-symbols-outlined {
+            font-size: 1.2rem;
+            /* Adjusted default icon size */
+            vertical-align: middle;
+        }
+
+        /* Specific color for MF */
+        .sidenav-header h1 .mf {
+            color: #00B4D8;
+            /* Your preferred blue for MF */
+            font-size: inherit;
+            /* Inherit size from h1 */
+        }
+
+        /* Style for CLINIC to ensure it's white if needed */
+        .sidenav-header h1 .clinic {
+            color: white;
+            font-size: inherit;
+            /* Inherit size from h1 */
+        }
+
+        .sidenav-header h1 {
+            font-size: 2rem;
+            /* Increased size for "MF CLINIC" */
         }
     </style>
 </head>
 
 <body>
-
-    <div class="toolbar">
+    <div class="toolbar open">
         <div class="toolbar-left">
-            <button onclick="openNav()">
+            <button onclick="toggleNav()">
                 <span class="material-symbols-outlined">menu</span>
             </button>
             <h2 id="pageTitle">Dashboard</h2>
@@ -316,9 +426,8 @@
         <div class="toolbar-search">
             <span class="material-symbols-outlined">search</span>
             <input type="text" placeholder="Search anything...">
-            <button
-                style="border: none; background: none; outline: none; cursor: pointer; color: #6b7280; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">
-                <span class="material-symbols-outlined" style="font-size: 1rem;">keyboard</span> + K
+            <button style="background: none; border: none;">
+                <span class="material-symbols-outlined">keyboard</span> + K
             </button>
         </div>
         <div class="toolbar-actions">
@@ -328,51 +437,50 @@
         </div>
     </div>
 
-    <div id="mySidenav" class="sidenav">
+    <div id="mySidenav" class="sidenav open">
         <div class="sidenav-header">
             <h1><span class="mf">MF</span> CLINIC</h1>
             <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
         </div>
-        <a href="?page=dashboard" class="sidenav-item active">
-            <span class="material-symbols-outlined">home</span>
-            Dashboard
-        </a>
-        <a href="?page=patients" class="sidenav-item">
-            <span class="material-symbols-outlined">group</span>
-            Patients
-        </a>
-        <a href="?page=appointments" class="sidenav-item">
-            <span class="material-symbols-outlined">calendar_today</span>
-            Appointments
-        </a>
-        <a href="?page=medical_records" class="sidenav-item">
-            <span class="material-symbols-outlined">note</span>
-            Medical Records
-        </a>
-        <a href="?page=billing_records" class="sidenav-item">
-            <span class="material-symbols-outlined">receipt</span>
-            Billing Records
-        </a>
+        <div class="sidenav-content">
+            <a href="?page=dashboard" class="sidenav-item active">
+                <span class="material-symbols-outlined">home</span> Dashboard
+            </a>
+            <a href="?page=patients" class="sidenav-item">
+                <span class="material-symbols-outlined">group</span> Patients
+            </a>
+            <a href="?page=appointments" class="sidenav-item">
+                <span class="material-symbols-outlined">calendar_today</span> Appointments
+            </a>
+            <a href="?page=medical_records" class="sidenav-item">
+                <span class="material-symbols-outlined">note</span> Medical Records
+            </a>
+            <a href="?page=billing_records" class="sidenav-item">
+                <span class="material-symbols-outlined">receipt</span> Billing Records
+            </a>
+        </div>
         <div class="sidenav-footer">
             <div class="user-info">
-                <img src="https://via.placeholder.com/40" alt="User Avatar">
+                <img src="https://via.placeholder.com/30" alt="User Avatar">
                 <div class="user-details">
                     <strong>John</strong>
                     <small>Nurse</small>
                 </div>
             </div>
-            <a href="#" class="flex items-center gap-2">
-                <span class="material-symbols-outlined">settings</span>
-                Settings
-            </a>
-            <a href="#" class="flex items-center gap-2">
-                <span class="material-symbols-outlined">logout</span>
-                Log Out
-            </a>
+            <div class="sidenav-footer-options">
+                <a href="#">
+                    <span class="material-symbols-outlined">settings</span>
+                    Settings
+                </a>
+                <a href="#">
+                    <span class="material-symbols-outlined">logout</span>
+                    Log Out
+                </a>
+            </div>
         </div>
     </div>
 
-    <div class="main">
+    <div class="main open">
         <div class="maincontainer">
             <?php
             // Check the 'page' query parameter and include the corresponding file
@@ -405,56 +513,73 @@
         </div>
     </div>
 
-</body>
+    <script>
+        const sidenav = document.getElementById("mySidenav");
+        const main = document.querySelector(".main");
+        const toolbar = document.querySelector(".toolbar");
+        const pageTitleElement = document.getElementById("pageTitle");
 
-<script>
-    const sidenav = document.getElementById("mySidenav");
-    const main = document.querySelector(".main");
-    const toolbar = document.querySelector(".toolbar");
-    const pageTitleElement = document.getElementById("pageTitle");
+        let isNavOpen = true;
 
-    function openNav() {
-        sidenav.classList.add("open");
-        main.classList.add("open");
-        toolbar.classList.add("open");
-    }
-
-    function closeNav() {
-        sidenav.classList.remove("open");
-        main.classList.remove("open");
-        toolbar.classList.remove("open");
-    }
-
-    // Function to update the toolbar title based on the page
-    function updateToolbarTitle() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const page = urlParams.get('page');
-        let title = 'Dashboard'; // Default title
-
-        if (page) {
-            title = page.replace('_', ' '); // Replace underscores with spaces
+        function openNav() {
+            sidenav.classList.add("open");
+            main.classList.add("open");
+            toolbar.classList.add("open");
+            isNavOpen = true;
         }
 
-        pageTitleElement.textContent = title;
-    }
+        function closeNav() {
+            sidenav.classList.remove("open");
+            main.classList.remove("open");
+            toolbar.classList.remove("open");
+            isNavOpen = false;
+        }
 
-    // Add active class to the current page link and update the toolbar title
-    document.addEventListener('DOMContentLoaded', function () {
-        const links = document.querySelectorAll('.sidenav-item');
-        const currentPage = window.location.search;
+        function toggleNav() {
+            isNavOpen ? closeNav() : openNav();
+        }
 
-        links.forEach(link => {
-            const linkPage = link.getAttribute('href').substring(1); // Remove the '?'
-            if (currentPage === linkPage) {
-                link.classList.add('active');
-            } else {
-                link.classList.remove('active');
-            }
+        function updateToolbarTitle() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const page = urlParams.get('page') || 'dashboard';
+            pageTitleElement.textContent = page.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        function updateActiveLink() {
+            const links = document.querySelectorAll('.sidenav-item');
+            const page = new URLSearchParams(window.location.search).get('page') || 'dashboard';
+            links.forEach(link => {
+                link.classList.toggle('active', link.href.includes(page));
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            openNav(); // Ensure it's open at start
+            updateToolbarTitle();
+            updateActiveLink();
+            updateMobileSearchPlaceholder();
         });
 
-        updateToolbarTitle(); // Call the function on page load
-    });
+        window.addEventListener('popstate', () => {
+            updateToolbarTitle();
+            updateActiveLink();
+        });
+        function updateMobileSearchPlaceholder() {
+            if (window.innerWidth <= 768) {
+                const searchInput = document.querySelector('.toolbar-search input');
+                if (searchInput) {
+                    searchInput.placeholder = 'Search';
+                }
+            } else {
+                const searchInput = document.querySelector('.toolbar-search input');
+                if (searchInput) {
+                    searchInput.placeholder = 'Search anything...'; // Revert to original placeholder if needed
+                }
+            }
+        }
 
-    // Update the title when the URL changes (e.g., clicking a sidenav link)
-    window.addEventListener('popstate', updateToolbarTitle);
-</script>
+        window.addEventListener('resize', updateMobileSearchPlaceholder);
+    </script>
+</body>
+
+</html>
