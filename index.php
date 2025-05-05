@@ -1,30 +1,15 @@
 <?php
+session_start();
+require_once('models/User.php');
+$user = new User('nurse');
+$_SESSION['user'] = $user;
 
-require 'config/roles.php'; // Include the roles and permissions
-
-$request = $_GET['action'] ?? 'list';
-$patientId = $_GET['id'] ?? null;
-
-require 'controllers/PatientController.php';
-
-$controller = new PatientController();
-
-switch ($request) {
-    case 'add':
-        $controller->addPatientForm();
-        break;
-    case 'store':
-        $controller->storePatient($_POST);
-        break;
-    case 'view':
-        if ($patientId !== null) {
-            $controller->viewPatientDetails($patientId);
-        } else {
-            echo "Invalid request.";
-        }
-        break;
-    case 'list':
-    default:
-        $controller->listPatients();
-        break;
+if (isset($_SESSION['user'])) {
+    $user = $_SESSION['user'];
+    if ($user instanceof User) {
+        include('views/nurse/index.php');
+    }
+} else {
+    echo "No user logged in.";
 }
+?>
