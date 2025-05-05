@@ -21,7 +21,7 @@
             z-index: 1;
             top: 0;
             left: 0;
-            background-color: #1e3a8a; /* Indigo 900 */
+            background: linear-gradient(to bottom, #000144 46%, #000144 67%, #0002AA 100%);
             color: white;
             overflow-x: hidden;
             transition: 0.3s;
@@ -45,6 +45,7 @@
         .sidenav-header h1 {
             font-size: 1.5rem;
             margin: 0;
+            color: white; /* Ensure header text is also white */
         }
 
         .sidenav-header .closebtn {
@@ -58,7 +59,7 @@
             padding: 10px 20px;
             text-decoration: none;
             font-size: 1rem;
-            color: white;
+            color: white; /* Sidenav text is white */
             display: flex;
             align-items: center;
             gap: 10px;
@@ -66,7 +67,7 @@
         }
 
         .sidenav-item:hover {
-            background-color: #374151; /* Gray 700 */
+            background-color: rgba(255, 255, 255, 0.1); /* Slightly lighter overlay on hover */
         }
 
         .sidenav-item.active {
@@ -77,8 +78,8 @@
         .sidenav-footer {
             margin-top: auto;
             padding: 20px;
-            background-color: #312e81; /* Indigo 800 */
-            border-top: 1px solid #4338ca; /* Indigo 700 */
+            background-color: rgba(0, 0, 0, 0.2); /* Slightly darker overlay for footer */
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .user-info {
@@ -97,6 +98,7 @@
 
         .user-details {
             font-size: 0.9rem;
+            color: white; /* User details text white */
         }
 
         .user-details strong {
@@ -107,7 +109,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            color: white;
+            color: white; /* Footer link text white */
             text-decoration: none;
             font-size: 0.9rem;
             padding: 8px 15px;
@@ -116,7 +118,7 @@
         }
 
         .sidenav-footer a:hover {
-            background-color: #4338ca; /* Indigo 700 */
+            background-color: rgba(255, 255, 255, 0.1); /* Slightly lighter overlay on hover */
         }
 
         .main {
