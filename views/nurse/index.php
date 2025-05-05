@@ -12,6 +12,118 @@
         body {
             font-family: "Lato", sans-serif;
             background-color: #f3f4f6;
+            margin: 0; /* Reset default body margin */
+        }
+
+        .toolbar {
+            background-color: white;
+            color: black;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 2;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: left 0.3s, width 0.3s; /* Add transition for smooth adjustment */
+        }
+
+        .toolbar.open {
+            left: 280px; /* Shift toolbar to the right when sidenav is open */
+            width: calc(100% - 280px); /* Reduce width to avoid covering sidenav */
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .toolbar-left button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #4b5563; /* Gray 600 */
+            padding: 0;
+            margin: 0;
+            outline: none;
+        }
+
+        .toolbar-left h2 {
+            font-size: 1.5rem;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .toolbar-search {
+            background-color: #f3f4f6; /* Light gray */
+            border-radius: 6px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toolbar-search .material-symbols-outlined {
+            font-size: 1.2rem;
+            color: #6b7280; /* Gray 500 */
+        }
+
+        .toolbar-search input[type="text"] {
+            border: none;
+            background: none;
+            outline: none;
+            font-size: 1rem;
+            color: #374151; /* Gray 700 */
+        }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .toolbar-actions button {
+            background: none;
+            border: 1px solid #6b7280; /* Gray 500 */
+            color: #6b7280;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            outline: none;
+        }
+
+        .toolbar-actions .notification {
+            position: relative;
+        }
+
+        .toolbar-actions .notification .material-symbols-outlined {
+            font-size: 1.5rem;
+            color: #4b5563; /* Gray 600 */
+        }
+
+        .toolbar-actions .notification::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: red;
+            color: white;
+            font-size: 0.7rem;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .sidenav {
@@ -22,7 +134,7 @@
             top: 0;
             left: 0;
             background: linear-gradient(to bottom, #000144 46%, #000144 67%, #0002AA 100%);
-            color: white;
+            color: white; /* Default text color for sidenav */
             overflow-x: hidden;
             transition: 0.3s;
             padding-top: 20px;
@@ -45,7 +157,7 @@
         .sidenav-header h1 {
             font-size: 1.5rem;
             margin: 0;
-            color: white; /* Ensure header text is also white */
+            color: white;
         }
 
         .sidenav-header .closebtn {
@@ -59,7 +171,7 @@
             padding: 10px 20px;
             text-decoration: none;
             font-size: 1rem;
-            color: white; /* Sidenav text is white */
+            color: white; /* Explicitly set text color to white */
             display: flex;
             align-items: center;
             gap: 10px;
@@ -68,11 +180,13 @@
 
         .sidenav-item:hover {
             background-color: rgba(255, 255, 255, 0.1); /* Slightly lighter overlay on hover */
+            color: white; /* Ensure text remains white on hover */
         }
 
         .sidenav-item.active {
             background-color: #0ea5e9; /* Sky 500 */
             font-weight: 500;
+            color: white; /* Ensure active text is white */
         }
 
         .sidenav-footer {
@@ -98,7 +212,7 @@
 
         .user-details {
             font-size: 0.9rem;
-            color: white; /* User details text white */
+            color: white; /* Explicitly set user details text to white */
         }
 
         .user-details strong {
@@ -109,7 +223,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            color: white; /* Footer link text white */
+            color: white; /* Explicitly set footer link text to white */
             text-decoration: none;
             font-size: 0.9rem;
             padding: 8px 15px;
@@ -119,34 +233,19 @@
 
         .sidenav-footer a:hover {
             background-color: rgba(255, 255, 255, 0.1); /* Slightly lighter overlay on hover */
+            color: white; /* Ensure text remains white on hover */
         }
 
         .main {
             margin-left: 0; /* Initially no margin */
-            transition: margin-left 0.3s;
             padding: 20px;
+            padding-top: 70px; /* Adjust top padding to avoid overlap with toolbar */
+            transition: margin-left 0.3s;
         }
 
         .main.open {
             margin-left: 280px;
-        }
-
-        .stickybtn {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 2;
-            display: block; /* Initially visible */
-        }
-
-        .stickybtn.hidden {
-            display: none;
-        }
-
-        .stickybtn span {
-            font-size: 2rem;
-            cursor: pointer;
-            color: #4b5563; /* Gray 600 */
+            padding-top: 70px; /* Maintain top padding when sidenav is open */
         }
 
         .maincontainer {
@@ -154,18 +253,41 @@
         }
 
         @media screen and (max-width: 768px) {
-            .sidenav.open {
-                width: 100%;
+            .toolbar.open {
+                left: 100%; /* Move toolbar off-screen when sidenav is full width */
+                width: 0;
             }
 
             .main.open {
                 margin-left: 100%;
+                padding-top: 70px; /* Maintain top padding */
             }
         }
     </style>
 </head>
 
 <body>
+
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <button onclick="openNav()">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+            <h2>Dashboard</h2>
+        </div>
+        <div class="toolbar-search">
+            <span class="material-symbols-outlined">search</span>
+            <input type="text" placeholder="Search anything...">
+            <button style="border: none; background: none; outline: none; cursor: pointer; color: #6b7280; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">
+                <span class="material-symbols-outlined" style="font-size: 1rem;">keyboard</span> + K
+            </button>
+        </div>
+        <div class="toolbar-actions">
+            <div class="notification">
+                <span class="material-symbols-outlined">notifications</span>
+            </div>
+            </div>
+    </div>
 
     <div id="mySidenav" class="sidenav">
         <div class="sidenav-header">
@@ -212,11 +334,6 @@
     </div>
 
     <div class="main">
-
-        <div id="stickyButton" class="stickybtn">
-            <span style="font-size:2rem;cursor:pointer;color:#4b5563" onclick="openNav()">&#9776;</span>
-        </div>
-
         <div class="maincontainer">
             <?php
             // Check the 'page' query parameter and include the corresponding file
@@ -247,7 +364,6 @@
             }
             ?>
         </div>
-
     </div>
 
 </body>
@@ -255,18 +371,18 @@
 <script>
     const sidenav = document.getElementById("mySidenav");
     const main = document.querySelector(".main");
-    const stickyButton = document.getElementById("stickyButton");
+    const toolbar = document.querySelector(".toolbar");
 
     function openNav() {
         sidenav.classList.add("open");
         main.classList.add("open");
-        stickyButton.classList.add("hidden");
+        toolbar.classList.add("open");
     }
 
     function closeNav() {
         sidenav.classList.remove("open");
         main.classList.remove("open");
-        stickyButton.classList.remove("hidden");
+        toolbar.classList.remove("open");
     }
 
     // Add active class to the current page link
@@ -284,5 +400,3 @@
         });
     });
 </script>
-
-</html>
