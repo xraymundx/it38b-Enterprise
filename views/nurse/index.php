@@ -6,13 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nurse Dashboard</title>
     <link rel="stylesheet" href="../../style/style.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
         body {
-            font-family: "Lato", sans-serif;
+            font-family: 'Poppins', sans-serif;
             background-color: #f3f4f6;
-            margin: 0; /* Reset default body margin */
+            margin: 0;
         }
 
         .toolbar {
@@ -28,12 +28,15 @@
             width: 100%;
             z-index: 2;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-            transition: left 0.3s, width 0.3s; /* Add transition for smooth adjustment */
+            transition: left 0.3s, width 0.3s;
+            /* Add transition for smooth adjustment */
         }
 
         .toolbar.open {
-            left: 280px; /* Shift toolbar to the right when sidenav is open */
-            width: calc(100% - 280px); /* Reduce width to avoid covering sidenav */
+            left: 280px;
+            /* Shift toolbar to the right when sidenav is open */
+            width: calc(100% - 280px);
+            /* Reduce width to avoid covering sidenav */
         }
 
         .toolbar-left {
@@ -47,7 +50,8 @@
             border: none;
             font-size: 1.5rem;
             cursor: pointer;
-            color: #4b5563; /* Gray 600 */
+            color: #4b5563;
+            /* Gray 600 */
             padding: 0;
             margin: 0;
             outline: none;
@@ -57,10 +61,13 @@
             font-size: 1.5rem;
             margin: 0;
             font-weight: 500;
+            text-transform: capitalize;
+            /* Add to capitalize the title */
         }
 
         .toolbar-search {
-            background-color: #f3f4f6; /* Light gray */
+            background-color: #f3f4f6;
+            /* Light gray */
             border-radius: 6px;
             padding: 8px 12px;
             display: flex;
@@ -70,7 +77,8 @@
 
         .toolbar-search .material-symbols-outlined {
             font-size: 1.2rem;
-            color: #6b7280; /* Gray 500 */
+            color: #6b7280;
+            /* Gray 500 */
         }
 
         .toolbar-search input[type="text"] {
@@ -78,7 +86,8 @@
             background: none;
             outline: none;
             font-size: 1rem;
-            color: #374151; /* Gray 700 */
+            color: #374151;
+            /* Gray 700 */
         }
 
         .toolbar-actions {
@@ -89,7 +98,8 @@
 
         .toolbar-actions button {
             background: none;
-            border: 1px solid #6b7280; /* Gray 500 */
+            border: 1px solid #6b7280;
+            /* Gray 500 */
             color: #6b7280;
             border-radius: 6px;
             padding: 8px 12px;
@@ -107,7 +117,8 @@
 
         .toolbar-actions .notification .material-symbols-outlined {
             font-size: 1.5rem;
-            color: #4b5563; /* Gray 600 */
+            color: #4b5563;
+            /* Gray 600 */
         }
 
         .toolbar-actions .notification::after {
@@ -128,13 +139,15 @@
 
         .sidenav {
             height: 100%;
-            width: 0; /* Initially hidden */
+            width: 0;
+            /* Initially hidden */
             position: fixed;
             z-index: 1;
             top: 0;
             left: 0;
             background: linear-gradient(to bottom, #000144 46%, #000144 67%, #0002AA 100%);
-            color: white; /* Default text color for sidenav */
+            color: white;
+            /* Default text color for sidenav */
             overflow-x: hidden;
             transition: 0.3s;
             padding-top: 20px;
@@ -155,8 +168,18 @@
         }
 
         .sidenav-header h1 {
-            font-size: 1.5rem;
+            font-size: 2rem;
+            /* Increased by 5px from 1.5rem */
             margin: 0;
+            color: white;
+            /* Default white for the whole text if no span */
+        }
+
+        .sidenav-header h1 span.mf {
+            color: #00B4D8;
+        }
+
+        .sidenav-header h1 span.clinic {
             color: white;
         }
 
@@ -171,7 +194,8 @@
             padding: 10px 20px;
             text-decoration: none;
             font-size: 1rem;
-            color: white; /* Explicitly set text color to white */
+            color: white;
+            /* Explicitly set text color to white */
             display: flex;
             align-items: center;
             gap: 10px;
@@ -179,20 +203,25 @@
         }
 
         .sidenav-item:hover {
-            background-color: rgba(255, 255, 255, 0.1); /* Slightly lighter overlay on hover */
-            color: white; /* Ensure text remains white on hover */
+            background-color: rgba(255, 255, 255, 0.1);
+            /* Slightly lighter overlay on hover */
+            color: white;
+            /* Ensure text remains white on hover */
         }
 
         .sidenav-item.active {
-            background-color: #0ea5e9; /* Sky 500 */
+            background-color: #0ea5e9;
+            /* Sky 500 */
             font-weight: 500;
-            color: white; /* Ensure active text is white */
+            color: white;
+            /* Ensure active text is white */
         }
 
         .sidenav-footer {
             margin-top: auto;
             padding: 20px;
-            background-color: rgba(0, 0, 0, 0.2); /* Slightly darker overlay for footer */
+            background-color: rgba(0, 0, 0, 0.2);
+            /* Slightly darker overlay for footer */
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -212,7 +241,8 @@
 
         .user-details {
             font-size: 0.9rem;
-            color: white; /* Explicitly set user details text to white */
+            color: white;
+            /* Explicitly set user details text to white */
         }
 
         .user-details strong {
@@ -223,7 +253,8 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            color: white; /* Explicitly set footer link text to white */
+            color: white;
+            /* Explicitly set footer link text to white */
             text-decoration: none;
             font-size: 0.9rem;
             padding: 8px 15px;
@@ -232,20 +263,25 @@
         }
 
         .sidenav-footer a:hover {
-            background-color: rgba(255, 255, 255, 0.1); /* Slightly lighter overlay on hover */
-            color: white; /* Ensure text remains white on hover */
+            background-color: rgba(255, 255, 255, 0.1);
+            /* Slightly lighter overlay on hover */
+            color: white;
+            /* Ensure text remains white on hover */
         }
 
         .main {
-            margin-left: 0; /* Initially no margin */
+            margin-left: 0;
+            /* Initially no margin */
             padding: 20px;
-            padding-top: 70px; /* Adjust top padding to avoid overlap with toolbar */
+            padding-top: 70px;
+            /* Adjust top padding to avoid overlap with toolbar */
             transition: margin-left 0.3s;
         }
 
         .main.open {
             margin-left: 280px;
-            padding-top: 70px; /* Maintain top padding when sidenav is open */
+            padding-top: 70px;
+            /* Maintain top padding when sidenav is open */
         }
 
         .maincontainer {
@@ -254,13 +290,15 @@
 
         @media screen and (max-width: 768px) {
             .toolbar.open {
-                left: 100%; /* Move toolbar off-screen when sidenav is full width */
+                left: 100%;
+                /* Move toolbar off-screen when sidenav is full width */
                 width: 0;
             }
 
             .main.open {
                 margin-left: 100%;
-                padding-top: 70px; /* Maintain top padding */
+                padding-top: 70px;
+                /* Maintain top padding */
             }
         }
     </style>
@@ -273,12 +311,13 @@
             <button onclick="openNav()">
                 <span class="material-symbols-outlined">menu</span>
             </button>
-            <h2>Dashboard</h2>
+            <h2 id="pageTitle">Dashboard</h2>
         </div>
         <div class="toolbar-search">
             <span class="material-symbols-outlined">search</span>
             <input type="text" placeholder="Search anything...">
-            <button style="border: none; background: none; outline: none; cursor: pointer; color: #6b7280; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">
+            <button
+                style="border: none; background: none; outline: none; cursor: pointer; color: #6b7280; font-size: 0.9rem; display: flex; align-items: center; gap: 5px;">
                 <span class="material-symbols-outlined" style="font-size: 1rem;">keyboard</span> + K
             </button>
         </div>
@@ -286,12 +325,12 @@
             <div class="notification">
                 <span class="material-symbols-outlined">notifications</span>
             </div>
-            </div>
+        </div>
     </div>
 
     <div id="mySidenav" class="sidenav">
         <div class="sidenav-header">
-            <h1>MF CLINIC</h1>
+            <h1><span class="mf">MF</span> CLINIC</h1>
             <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
         </div>
         <a href="?page=dashboard" class="sidenav-item active">
@@ -372,6 +411,7 @@
     const sidenav = document.getElementById("mySidenav");
     const main = document.querySelector(".main");
     const toolbar = document.querySelector(".toolbar");
+    const pageTitleElement = document.getElementById("pageTitle");
 
     function openNav() {
         sidenav.classList.add("open");
@@ -385,8 +425,21 @@
         toolbar.classList.remove("open");
     }
 
-    // Add active class to the current page link
-    document.addEventListener('DOMContentLoaded', function() {
+    // Function to update the toolbar title based on the page
+    function updateToolbarTitle() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const page = urlParams.get('page');
+        let title = 'Dashboard'; // Default title
+
+        if (page) {
+            title = page.replace('_', ' '); // Replace underscores with spaces
+        }
+
+        pageTitleElement.textContent = title;
+    }
+
+    // Add active class to the current page link and update the toolbar title
+    document.addEventListener('DOMContentLoaded', function () {
         const links = document.querySelectorAll('.sidenav-item');
         const currentPage = window.location.search;
 
@@ -398,5 +451,10 @@
                 link.classList.remove('active');
             }
         });
+
+        updateToolbarTitle(); // Call the function on page load
     });
+
+    // Update the title when the URL changes (e.g., clicking a sidenav link)
+    window.addEventListener('popstate', updateToolbarTitle);
 </script>
