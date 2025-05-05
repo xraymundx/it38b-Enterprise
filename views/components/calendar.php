@@ -10,25 +10,37 @@
             font-family: sans-serif;
             display: flex;
             justify-content: center;
-            padding: 2rem;
-            background-color: #f4f6f8;
+            padding: 0;
+            background-color: transparent;
+            margin: 0;
+            height: 100%;
         }
 
         .dashboard-calendar {
-            width: 360px;
+            width: 100%;
+            border: 1px solid #333;
+            height: 100%;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0.1);
             overflow: hidden;
             background-color: #fff;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            /* Added padding around the calendar content */
+            box-sizing: border-box;
+            /* Ensures padding is included in the element's total width and height */
         }
 
         .calendar-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px;
+            padding: 0 0 15px 0;
+            /* Adjusted header padding */
             background-color: #f9f9f9;
             border-bottom: 1px solid #eee;
+            flex-shrink: 0;
         }
 
         .calendar-header button {
@@ -56,6 +68,28 @@
         .calendar-grid {
             width: 100%;
             border-collapse: collapse;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .calendar-grid thead {
+            flex-shrink: 0;
+            width: 100%;
+            display: table;
+        }
+
+        .calendar-grid tbody {
+            display: block;
+            width: 100%;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .calendar-grid tr {
+            display: flex;
+            width: 100%;
         }
 
         .calendar-grid th,
@@ -64,6 +98,12 @@
             padding: 10px;
             text-align: center;
             font-size: 0.9em;
+            box-sizing: border-box;
+            flex-grow: 1;
+            flex-basis: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .calendar-grid th {
@@ -74,14 +114,18 @@
         .calendar-grid td {
             border: 1px solid #f0f0f0;
             color: #444;
-            height: 40px;
+            height: auto;
             vertical-align: middle;
         }
-
 
         .calendar-day {
             cursor: pointer;
             transition: background-color 0.2s ease;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .calendar-day:hover {
@@ -95,12 +139,14 @@
         }
 
         .calendar-footer {
-            padding: 15px;
+            padding: 15px 0 0 0;
+            /* Adjusted footer padding */
             background-color: #f9f9f9;
             border-top: 1px solid #eee;
             display: flex;
             flex-direction: column;
             gap: 10px;
+            flex-shrink: 0;
         }
 
         .total-appointments {
@@ -187,7 +233,6 @@
                 <button class="filter">Done</button>
             </div>
             <div class="appointments-box" id="appointments-box">
-                <!-- Placeholder items -->
                 <div class="appointment-item">8:00 AM - Dental Checkup</div>
                 <div class="appointment-item">10:30 AM - Physical Therapy</div>
                 <div class="appointment-item">1:00 PM - Vaccination</div>
@@ -213,7 +258,7 @@
             const firstDayOfMonth = new Date(year, month, 1);
             const lastDayOfMonth = new Date(year, month + 1, 0);
             const daysInMonth = lastDayOfMonth.getDate();
-            const startDay = (firstDayOfMonth.getDay() + 6) % 7; // Adjust for Monday start
+            const startDay = (firstDayOfMonth.getDay() + 6) % 7;
 
             calendarHeader.textContent = date.toLocaleString('default', {
                 month: 'long',
@@ -280,7 +325,7 @@
             button.addEventListener('click', () => {
                 filterButtons.forEach((btn) => btn.classList.remove('active'));
                 button.classList.add('active');
-                // Placeholder: Filter logic here
+
                 console.log('Filter:', button.textContent);
             });
         });

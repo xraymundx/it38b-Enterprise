@@ -16,6 +16,10 @@
             /* Light gray background */
         }
 
+        .maincontainer {
+            margin: 0 0 0 0;
+        }
+
         .toolbar {
             position: fixed;
             top: 0;
