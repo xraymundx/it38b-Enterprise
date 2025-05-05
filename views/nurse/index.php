@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once('models/User.php');
+require_once('../../models/User.php');
 $user = new User('nurse');
 $_SESSION['user'] = $user;
 
@@ -15,7 +15,7 @@ if (isset($_SESSION['user'])) {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Nurse Dashboard</title>
-            <link rel="stylesheet" href="style/style.css">
+            <link rel="stylesheet" href="../../style/style.css">
             <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
         </head>
 
@@ -23,11 +23,11 @@ if (isset($_SESSION['user'])) {
 
             <div id="mySidenav" class="sidenav">
                 <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-                <a href="index.php">Dashboard</a>
-                <a href="patients.php">Patients</a>
-                <a href="appointments.php">Appointments</a>
-                <a href="medical_records.php">Medical Records</a>
-                <a href="billing_records.php">Billing Records</a>
+                <a href="?page=dashboard">Dashboard</a>
+                <a href="?page=patients">Patients</a>
+                <a href="?page=appointments">Appointments</a>
+                <a href="?page=medical_records">Medical Records</a>
+                <a href="?page=billing_records">Billing Records</a>
             </div>
 
             <div class="main">
@@ -38,12 +38,34 @@ if (isset($_SESSION['user'])) {
 
                 <div class="maincontainer">
                     <h1>Welcome to the Nurse Dashboard</h1>
-                    <ul>
-                        <li><a href="patients.php">Patients</a></li>
-                        <li><a href="appointments.php">Appointments</a></li>
-                        <li><a href="medical_records.php">Medical Records</a></li>
-                        <li><a href="billing_records.php">Billing Records</a></li>
-                    </ul>
+                    <?php
+                    // Check the 'page' query parameter and include the corresponding file
+                    if (isset($_GET['page'])) {
+                        $page = $_GET['page'];
+                        switch ($page) {
+                            case 'dashboard':
+                                include('dashboard.php');
+                                break;
+                            case 'patients':
+                                include('patients.php');
+                                break;
+                            case 'appointments':
+                                include('appointments.php');
+                                break;
+                            case 'medical_records':
+                                include('medical_records.php');
+                                break;
+                            case 'billing_records':
+                                include('billing_records.php');
+                                break;
+                            default:
+                                echo "Page not found.";
+                        }
+                    } else {
+                        // Default to dashboard if no page is specified
+                        include('dashboard.php');
+                    }
+                    ?>
                 </div>
 
             </div>
