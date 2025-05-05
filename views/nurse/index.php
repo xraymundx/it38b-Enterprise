@@ -49,6 +49,14 @@
             /* Prevents overflow issues with long titles */
         }
 
+        .toolbar-left h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            color: #111827;
+        }
+
         /* 🔧 Menu Button */
         .toolbar-left button {
             background: none;
@@ -197,7 +205,6 @@
 
         .sidenav-footer {
             margin-top: auto;
-            /* Push the footer to the bottom */
             padding: 1.2rem;
             background-color: white;
             border-top: none;
@@ -236,7 +243,7 @@
             font-size: 0.85rem;
             color: #374151;
             font-family: 'Poppins', sans-serif;
-            /* Apply Poppins font */
+
         }
 
         .user-details strong {
@@ -244,7 +251,7 @@
             font-weight: 500;
             color: black;
             font-family: 'Poppins', sans-serif;
-            /* Apply Poppins font */
+
         }
 
         .sidenav-footer-options {
@@ -264,7 +271,7 @@
             border-radius: 4px;
             transition: background-color 0.15s ease-in-out;
             font-family: 'Poppins', sans-serif;
-            /* Apply Poppins font */
+
         }
 
         .sidenav-footer-options a:hover {
@@ -276,7 +283,7 @@
             font-size: 1.1rem;
         }
 
-        /* Hide any other links directly within sidenav-footer if they exist */
+
         .sidenav-footer>a {
             display: none !important;
         }
@@ -284,14 +291,12 @@
         .main {
             margin-left: 0;
             padding: 80px 1rem 1rem;
-            /* Adjusted top and side padding */
             transition: margin-left 0.3s ease;
         }
 
         .main.open {
             margin-left: 280px;
             padding-top: 80px;
-            /* Adjusted top padding */
         }
 
         .toolbar.open {
@@ -318,10 +323,8 @@
                 align-items: center;
                 justify-content: space-between;
                 padding: 0.3rem 0.5rem;
-                /* Further reduced padding */
                 height: auto;
                 gap: 0.3rem;
-                /* Further reduced gap */
                 flex-wrap: nowrap;
             }
 
@@ -329,18 +332,16 @@
                 display: flex;
                 align-items: center;
                 gap: 0.3rem;
-                /* Reduced gap */
                 margin-bottom: 0;
             }
 
             .toolbar-left h2 {
-                font-size: 1.5rem;
+                font-size: 1rem;
 
             }
 
             .toolbar-left button {
                 font-size: 1.3rem;
-                /* Slightly smaller menu icon to balance */
             }
 
             .toolbar-search {
@@ -348,7 +349,6 @@
                 align-items: center;
                 margin: 0;
                 padding: 0.2rem 0.4rem;
-                /* Further reduced padding */
                 background-color: #e5e7eb;
                 border-radius: 6px;
                 flex-grow: 1;
@@ -356,40 +356,32 @@
 
             .toolbar-search input {
                 font-size: 0.8rem;
-                /* Smaller font size for input */
                 padding-left: 0.3rem;
-                /* Adjust input padding */
             }
 
             .toolbar-search input::placeholder {
                 color: #6b7280;
                 font-size: 0.8rem;
-                /* Smaller placeholder font */
             }
 
             .toolbar-search .material-symbols-outlined {
                 font-size: 1rem;
-                /* Smaller search icon */
                 margin-right: 0.2rem;
-                /* Adjust icon margin */
             }
 
             .toolbar-actions {
                 display: flex;
                 align-items: center;
                 gap: 0.3rem;
-                /* Reduced gap */
             }
 
             .toolbar-actions .notification .material-symbols-outlined {
                 font-size: 1.5rem;
-                /* Smaller notification icon */
             }
         }
 
         .material-symbols-outlined {
             font-size: 1.2rem;
-            /* Adjusted default icon size */
             vertical-align: middle;
         }
 
@@ -421,7 +413,7 @@
             <button onclick="toggleNav()">
                 <span class="material-symbols-outlined">menu</span>
             </button>
-            <h2 id="pageTitle">Dashboard</h2>
+            <h2 id="pageTitle"></h2>
         </div>
         <div class="toolbar-search">
             <span class="material-symbols-outlined">search</span>
@@ -541,13 +533,13 @@
 
         function updateToolbarTitle() {
             const urlParams = new URLSearchParams(window.location.search);
-            const page = urlParams.get('page') || 'dashboard';
+            const page = urlParams.get('page')
             pageTitleElement.textContent = page.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
         }
 
         function updateActiveLink() {
             const links = document.querySelectorAll('.sidenav-item');
-            const page = new URLSearchParams(window.location.search).get('page') || 'dashboard';
+            const page = new URLSearchParams(window.location.search).get('page');
             links.forEach(link => {
                 link.classList.toggle('active', link.href.includes(page));
             });
@@ -573,7 +565,7 @@
             } else {
                 const searchInput = document.querySelector('.toolbar-search input');
                 if (searchInput) {
-                    searchInput.placeholder = 'Search anything...'; // Revert to original placeholder if needed
+                    searchInput.placeholder = 'Search anything...';
                 }
             }
         }
