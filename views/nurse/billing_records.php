@@ -1,5 +1,5 @@
 <?php
-include('layouts/dashboard_layout.php');
+
 ?>
 
 <div class="maincontainer">
