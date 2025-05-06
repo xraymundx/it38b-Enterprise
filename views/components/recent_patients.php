@@ -1,3 +1,22 @@
+<?php
+// Include database connection
+require_once 'config/config.php'; // Adjust the path as needed
+
+// Fetch the 3 most recent patients, their first and last names, and descriptions
+$query = "SELECT p.id, p.first_name, p.last_name, p.created_at, d.description
+          FROM patients p
+          LEFT JOIN patient_descriptions d ON p.id = d.patient_id
+          ORDER BY p.created_at DESC LIMIT 3";
+$result = $conn->query($query);
+
+// Check if there are results
+$recentPatients = [];
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $recentPatients[] = $row;
+    }
+}
+?>
 <style>
     .recent-patients-container {
         border: 1px solid #333;
@@ -55,11 +74,7 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        /* You would set the actual image as a background-image in your CSS,
-        using a URL from your database or a default.  For this example, we
-        will just use a color. */
         background-color: #ddd;
-        /* Placeholder color */
         display: flex;
         align-items: center;
         justify-content: center;
@@ -78,14 +93,11 @@
 
     .see-more-link a {
         display: inline-block;
-
         padding: 8px 15px;
         color: #fff;
-
         background-color: #007bff;
         border: none;
         border-radius: 20px;
-
         text-decoration: none;
         font-size: 0.9em;
         cursor: pointer;
@@ -94,9 +106,7 @@
 
     .see-more-link a:hover {
         background-color: #0056b3;
-        /* Darker blue on hover */
         text-decoration: none;
-        /* Remove underline on hover for button style */
     }
 </style>
 
@@ -108,54 +118,51 @@
         <thead>
             <tr>
                 <th>Patient</th>
-                <th>Date</th>
+                <th>Date Added</th>
                 <th>Description</th>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>
-                    <div class="patient-info">
-                        <div class="patient-avatar">
-                            <?php
-                            //  In a real application, you'd fetch the patient's
-                            //  initials or an image URL from the database.
-                            echo "DJ";  // Example: Display initials
-                            ?>
-                        </div>
-                        <div class="patient-name">Dan Mark Javier</div>
-                    </div>
-                </td>
-                <td>3/24/2025</td>
-                <td>Common Cold</td>
-            </tr>
-            <tr>
-                <td>
-                    <div class="patient-info">
-                        <div class="patient-avatar">
-                            <?php echo "DJ"; ?>
-                        </div>
-                        <div class="patient-name">Dan Mark Javier</div>
-                    </div>
-                </td>
-                <td>3/24/2025</td>
-                <td>Common Cold</td>
-            </tr>
-            <tr>
-                <td>
-                    <div class="patient-info">
-                        <div class="patient-avatar">
-                            <?php echo "DJ"; ?>
-                        </div>
-                        <div class="patient-name">Dan Mark Javier</div>
-                    </div>
-                </td>
-                <td>3/24/2025</td>
-                <td>Common Cold</td>
-            </tr>
+            <?php if (!empty($recentPatients)): ?>
+                <?php foreach ($recentPatients as $patient): ?>
+                    <tr>
+                        <td>
+                            <div class="patient-info">
+                                <div class="patient-avatar">
+                                    <?php
+                                    $initials = '';
+                                    if (!empty($patient['first_name'])) {
+                                        $initials .= strtoupper($patient['first_name'][0]);
+                                    }
+                                    if (!empty($patient['last_name'])) {
+                                        $initials .= strtoupper($patient['last_name'][0]);
+                                    }
+                                    echo htmlspecialchars(substr($initials, 0, 2)); // Display up to 2 initials
+                                    ?>
+                                </div>
+                                <div class="patient-name">
+                                    <?php
+                                    echo htmlspecialchars($patient['first_name'] ?? '');
+                                    if (!empty($patient['first_name']) && !empty($patient['last_name'])) {
+                                        echo ' ';
+                                    }
+                                    echo htmlspecialchars($patient['last_name'] ?? '');
+                                    ?>
+                                </div>
+                            </div>
+                        </td>
+                        <td><?php echo htmlspecialchars(date('m/d/Y', strtotime($patient['created_at']))); ?></td>
+                        <td><?php echo htmlspecialchars($patient['description'] ?? 'New Patient'); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <tr>
+                    <td colspan="3" style="text-align: center;">No recent patients found.</td>
+                </tr>
+            <?php endif; ?>
         </tbody>
     </table>
     <div class="see-more-link">
-        <a href="appointments.php">See More...</a>
+        <a href="?page=patients">See More...</a>
     </div>
 </div>

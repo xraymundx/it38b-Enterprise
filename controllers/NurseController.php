@@ -1,37 +1,38 @@
 <?php
 
-class NurseController {
-    public function __construct() {
-        // Check if user is logged in and has a valid role
+class NurseController
+{
+    public function __construct()
+    {
         session_start();
         if (!isset($_SESSION['user'])) {
-            header('Location: login.php');  // Redirect to login if not authenticated
+            header('Location: login.php');
             exit();
         }
     }
 
-    public function index() {
-        // Load Nurse Dashboard
-        require_once('views/nurse/index.php');
+    public function index()
+    {
+        require_once('views/nurse/dashboard.php');
     }
 
-    public function patients() {
-        // Load Patients View
+    public function patients()
+    {
         require_once('views/nurse/patients.php');
     }
 
-    public function appointments() {
-        // Load Appointments View
+    public function appointments()
+    {
         require_once('views/nurse/appointments.php');
     }
 
-    public function medicalRecords() {
-        // Load Medical Records View
+    public function medicalRecords()
+    {
         require_once('views/nurse/medical_records.php');
     }
 
-    public function billingRecords() {
-        // Load Billing Records View
+    public function billingRecords()
+    {
         require_once('views/nurse/billing_records.php');
     }
 }

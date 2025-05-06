@@ -8,6 +8,7 @@
         width: 100%;
         /* Ensure it takes full width of the .main container */
         height: 100%;
+        /* Ensure it takes full height of the .main container */
         box-sizing: border-box;
         /* Important for padding and border to be inside width/height */
     }
