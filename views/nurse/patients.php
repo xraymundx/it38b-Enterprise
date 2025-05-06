@@ -83,6 +83,29 @@ function generatePaginationLinks($currentPage, $totalPages)
             margin-bottom: 20px;
         }
 
+        .patient-actions {
+            text-align: center;
+        }
+
+        .patient-actions a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .patient-actions a span.material-icons {
+            margin-right: 5px;
+            /* Space between icon and text */
+        }
+
+        .patient-actions a:hover {
+            color: #6c5dd3;
+            /* Change color on hover */
+        }
+
         .add-patient-button {
             background-color: #6c5dd3;
             color: white;
@@ -361,6 +384,8 @@ function generatePaginationLinks($currentPage, $totalPages)
                         <th>Actions</th>
                     </tr>
                 </thead>
+                <!-- Load Google Material Icons in your <head> section -->
+                <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
                 <tbody>
                     <?php if (!empty($patients)): ?>
                         <?php foreach ($patients as $patient): ?>
@@ -371,13 +396,14 @@ function generatePaginationLinks($currentPage, $totalPages)
                                 <td data-label="Date of Birth"><?php echo htmlspecialchars($patient['date_of_birth']); ?></td>
                                 <td data-label="Email"><?php echo htmlspecialchars($patient['email']); ?></td>
                                 <td data-label="Phone"><?php echo htmlspecialchars($patient['phone']); ?></td>
-                                <td class="functions/patient-actions" data-label="Actions">
-                                    <a
-                                        href="functions/view_patient.php?id=<?php echo htmlspecialchars($patient['id']); ?>">View</a>
-                                    <a
-                                        href="functions/edit_patient.php?id=<?php echo htmlspecialchars($patient['id']); ?>">Edit</a>
+                                <td class="patient-actions" data-label="Actions">
+                                    <a href="functions/view_patient.php?id=<?php echo htmlspecialchars($patient['id']); ?>"><span
+                                            class="material-icons">visibility</span> View</a>
+                                    <a href="functions/edit_patient.php?id=<?php echo htmlspecialchars($patient['id']); ?>"><span
+                                            class="material-icons">edit</span> Edit</a>
                                     <a href="functions/delete_patient.php?id=<?php echo htmlspecialchars($patient['id']); ?>"
-                                        onclick="return confirm('Are you sure?')">Delete</a>
+                                        onclick="return confirm('Are you sure?')"><span class="material-icons">delete</span>
+                                        Delete</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -387,6 +413,8 @@ function generatePaginationLinks($currentPage, $totalPages)
                         </tr>
                     <?php endif; ?>
                 </tbody>
+
+
             </table>
         </div>
 
