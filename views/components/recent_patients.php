@@ -1,6 +1,6 @@
 <style>
     .recent-patients-container {
-        background-color: #fff;
+        border: 1px solid #333;
         border-radius: 10px;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         padding: 20px;
@@ -30,7 +30,7 @@
         text-align: left;
         font-size: 0.9em;
         color: #777;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #ccc;
     }
 
     .recent-patients-table tbody td {
@@ -38,7 +38,7 @@
         text-align: left;
         font-size: 0.95em;
         color: #333;
-        border-bottom: 1px solid #f8f8f8;
+        border-bottom: 1px solid #ccc;
     }
 
     .recent-patients-table tbody tr:last-child td {
@@ -72,20 +72,31 @@
     }
 
     .see-more-link {
-        text-align: right;
+        text-align: center;
         margin-top: 10px;
     }
 
     .see-more-link a {
-        color: #007bff;
-        /* Blue color for the link. */
+        display: inline-block;
+
+        padding: 8px 15px;
+        color: #fff;
+
+        background-color: #007bff;
+        border: none;
+        border-radius: 20px;
+
         text-decoration: none;
         font-size: 0.9em;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
     }
 
     .see-more-link a:hover {
-        text-decoration: underline;
-        /* underline on hover */
+        background-color: #0056b3;
+        /* Darker blue on hover */
+        text-decoration: none;
+        /* Remove underline on hover for button style */
     }
 </style>
 

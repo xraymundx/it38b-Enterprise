@@ -1,343 +1,422 @@
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nurse Dashboard</title>
-<link rel="stylesheet" href="calendar.css">
 <style>
     body {
         font-family: sans-serif;
-        margin: 20px;
-        background-color: #f4f4f4;
-    }
-
-    .maincontainer {
-        max-width: 1200px;
-        margin: 0 auto;
-        background-color: #fff;
+        background-color: #f4f6f8;
+        margin: 0;
         padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        box-sizing: border-box;
     }
 
-    .dashboard-nav {
-        display: flex;
-        margin-bottom: 20px;
-        border-bottom: 1px solid #ddd;
+    .parent {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: repeat(5, auto);
+        /* Use auto for rows to fit content */
+        grid-column-gap: 20px;
+        grid-row-gap: 20px;
+        max-width: 1200px;
+        /* Optional: Limit the width of the dashboard */
+        margin: 0 auto;
+        /* Optional: Center the dashboard */
     }
 
-    .dashboard-nav button {
-        background: none;
+    .add-patient-doctor {
+        border: 1px solid #333;
+        grid-area: 1 / 1 / 3 / 4;
+        background-color: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        /* Two columns */
+        grid-template-rows: auto auto;
+        /* Two rows */
+        grid-template-areas:
+            "title image"
+            "button image";
+        gap: 10px;
+        /* Adjust as needed */
+        align-items: start;
+    }
+
+    .add-patient-doctor h3 {
+        grid-area: title;
+        margin: 0;
+        font-size: 1.5em;
+        /* Bigger title text */
+        color: #333;
+        /* Adjust color if needed */
+    }
+
+    .add-appointment-button {
+        grid-area: button;
+        background-color: #6c5dd3;
+        color: white;
         border: none;
-        padding: 10px 15px;
-        font-size: 1rem;
+        border-radius: 20px;
+        /* More rounded button */
+        padding: 12px 20px;
+        /* Slightly bigger padding */
         cursor: pointer;
-        color: #555;
-        border-bottom: 2px solid transparent;
+        font-size: 1em;
+        /* Slightly bigger font size */
+        transition: background-color 0.3s ease;
     }
 
-    .dashboard-nav button.active {
-        color: #007bff;
-        border-bottom-color: #007bff;
+    .add-appointment-button:hover {
+        background-color: #5649a8;
     }
 
-    .dashboard-content>div {
-        display: none;
-        /* Initially hide all content sections */
-    }
-
-    .dashboard-content>div.active {
-        display: block;
-        /* Show the active content section */
-    }
-
-    .dashboard-overview {
+    .doctor-image-container {
+        grid-area: image;
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        overflow: hidden;
         display: flex;
-        gap: 20px;
-        margin-bottom: 20px;
+        justify-content: flex-end;
+        /* Align image to the right */
+        align-items: center;
+        /* Vertically center image if needed */
     }
 
-    .overview-card {
-        flex: 1;
-        background-color: #e9ecef;
-        border-radius: 6px;
+    .doctor-image-container img {
+        display: block;
+        width: auto;
+        height: auto;
+        max-height: 240px;
+        border-radius: 8px;
+        object-fit: contain;
+        overflow: hidden;
+    }
+
+
+    .stats {
+        border: 1px solid #333;
+        grid-area: 1 / 4 / 3 / 6;
+        background-color: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        /* Spacing between stat lines */
+    }
+
+    .stat-line {
+        display: flex;
+        flex-direction: column;
+        /* Stack label and number */
+    }
+
+    .stat-label {
+        font-size: 0.8em;
+        /* Small label text */
+        color: #777;
+        margin-bottom: 2px;
+    }
+
+    .stat-number {
+        font-size: 2em;
+        /* Extra-large number text */
+        color: #333;
+        font-weight: bold;
+    }
+
+    .calender {
+        grid-area: 3 / 1 / 4 / 3;
+        background-color: #fff;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .calender h3 {
+        margin-top: 0;
+        color: #333;
+        font-size: 1.1em;
+        margin-bottom: 10px;
+    }
+
+    .calendar-content {
+        /* Add basic calendar styles here */
+    }
+
+    .appointment-requests {
+        border: 1px solid #333;
+        grid-area: 3 / 3 / 6 / 6;
+        background-color: #fff;
+        border-radius: 10px;
         padding: 15px;
-        text-align: center;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     }
 
-    .overview-card.earnings {
-        background-color: #007bff;
-        color: white;
+    .appointment-requests-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
     }
 
-    .overview-card.patients {
-        background-color: #28a745;
-        color: white;
-    }
-
-    .overview-card.appointments-count {
-        background-color: #ffc107;
+    .appointment-requests-header h3 {
+        font-size: 1.1em;
+        margin: 0;
         color: #333;
     }
 
-    .card-title {
-        font-size: 1.1rem;
-        font-weight: bold;
-        margin-bottom: 5px;
+    .view-all-button {
+        background-color: #6c5dd3;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: background-color 0.3s ease;
     }
 
-    .card-value {
-        font-size: 1.5rem;
+    .view-all-button:hover {
+        background-color: #5649a8;
     }
 
-    .dashboard-widgets {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
+    .appointment-requests-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        overflow-y: auto;
     }
 
-    .widget {
-        background-color: #fff;
-        border-radius: 6px;
-        padding: 15px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    .widget-title {
-        font-size: 1.2rem;
-        margin-bottom: 10px;
-        border-bottom: 1px solid #ddd;
-        padding-bottom: 5px;
-    }
-
-    /* Recent Patients Table */
-    .recent-patients-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .recent-patients-table th,
-    .recent-patients-table td {
-        padding: 8px;
-        text-align: left;
+    .appointment-request-item {
+        display: flex;
+        gap: 10px;
+        padding: 10px 0;
         border-bottom: 1px solid #eee;
+        align-items: center;
     }
 
-    .recent-patients-table th {
-        font-weight: bold;
+    .appointment-request-item:last-child {
+        border-bottom: none;
     }
 
     .patient-info {
         display: flex;
         align-items: center;
         gap: 8px;
-    }
-
-    .patient-info img {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
-    .see-more {
-        margin-top: 10px;
-        text-align: right;
-    }
-
-    .see-more a {
-        color: #007bff;
-        text-decoration: none;
-    }
-
-    /* Appointments Tab Styles */
-    .appointments-list-container {
-        padding: 15px;
-        background-color: #fff;
-        border-radius: 6px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    .appointment-item {
-        border-bottom: 1px solid #eee;
-        padding: 10px 0;
-        display: flex;
-        gap: 15px;
-        align-items: center;
-    }
-
-    .appointment-item:last-child {
-        border-bottom: none;
-    }
-
-    .appointment-details {
         flex-grow: 1;
     }
 
-    .appointment-details h4 {
-        font-size: 1rem;
-        margin-bottom: 5px;
+    .patient-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: #ddd;
+        color: #666;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.8em;
+        flex-shrink: 0;
     }
 
-    .appointment-meta {
-        font-size: 0.875rem;
+    .patient-name {
+        font-weight: bold;
+        color: #333;
+    }
+
+    .appointment-date,
+    .appointment-time {
+        color: #555;
+        font-size: 0.9em;
+        white-space: nowrap;
+    }
+
+    .appointment-actions {
+        display: flex;
+        gap: 5px;
+        flex-shrink: 0;
+    }
+
+    .accept-button,
+    .reject-button {
+        border: none;
+        border-radius: 5px;
+        padding: 8px 10px;
+        cursor: pointer;
+        font-size: 0.85em;
+        transition: opacity 0.3s ease;
+    }
+
+    .accept-button {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .reject-button {
+        background-color: #F44336;
+        color: white;
+    }
+
+    .accept-button:hover,
+    .reject-button:hover {
+        opacity: 0.8;
+    }
+
+    .no-requests {
+        padding: 15px 0;
         color: #777;
+        text-align: center;
+        font-style: italic;
     }
 
-    /* Responsive Layout */
+    /* Responsive adjustments (adjust as needed) */
     @media (max-width: 768px) {
-        .dashboard-overview {
-            flex-direction: column;
+        .parent {
+            grid-template-columns: 1fr;
+            /* Stack items on smaller screens */
         }
 
-        .dashboard-widgets {
-            grid-template-columns: 1fr;
+        .add-patient-doctor,
+        .stats,
+        .calender,
+        .new-patient-list,
+        .appointment-requests {
+            grid-area: auto;
+            /* Let them flow naturally */
+            margin-bottom: 20px;
         }
     }
 </style>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const navButtons = document.querySelectorAll('.dashboard-nav button');
-        const contentDivs = document.querySelectorAll('.dashboard-content > div');
-
-        function showTab(tabId) {
-            contentDivs.forEach(div => div.classList.remove('active'));
-            navButtons.forEach(button => button.classList.remove('active'));
-
-            const targetDiv = document.getElementById(tabId);
-            const targetButton = Array.from(navButtons).find(button => button.getAttribute('data-tab') === tabId);
-
-            if (targetDiv) {
-                targetDiv.classList.add('active');
-            }
-            if (targetButton) {
-                targetButton.classList.add('active');
-            }
-        }
-
-        navButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const tabId = button.getAttribute('data-tab');
-                showTab(tabId);
-            });
-        });
-
-        // Show the default tab (e.g., dashboard) on load
-        showTab('dashboard-home');
-
-        // Example of fetching recent patients (replace with your actual data fetching)
-        const recentPatientsTableBody = document.querySelector('#recent-patients-tab .recent-patients-table tbody');
-        const recentPatientsData = [
-            { name: 'Dan Mark Javier', date: '5/08/2025', description: 'Follow-up' },
-            { name: 'Jane Doe', date: '5/09/2025', description: 'Vaccination' },
-            { name: 'Peter Smith', date: '5/10/2025', description: 'Consultation' },
-        ];
-
-        if (recentPatientsTableBody) {
-            recentPatientsData.forEach(patient => {
-                const row = recentPatientsTableBody.insertRow();
-                const nameCell = row.insertCell();
-                const dateCell = row.insertCell();
-                const descriptionCell = row.insertCell();
-
-                nameCell.innerHTML = `<div class="patient-info"><img src="https://via.placeholder.com/30" alt="Patient Avatar"><span>${patient.name}</span></div>`;
-                dateCell.textContent = patient.date;
-                descriptionCell.textContent = patient.description;
-            });
-        }
-
-        // Placeholder appointment data
-        const appointmentsListContainer = document.getElementById('appointments-tab-content');
-        if (appointmentsListContainer) {
-            const appointmentsData = [
-                { patient: 'Alice Brown', time: '9:00 AM', date: 'May 6, 2025', reason: 'Checkup' },
-                { patient: 'Bob Green', time: '10:30 AM', date: 'May 6, 2025', reason: 'Vaccination' },
-                { patient: 'Charlie White', time: '11:15 AM', date: 'May 6, 2025', reason: 'Consultation' },
-                { patient: 'Diana Black', time: '2:00 PM', date: 'May 6, 2025', reason: 'Follow-up' },
-            ];
-
-            appointmentsData.forEach(appointment => {
-                const appointmentItem = document.createElement('div');
-                appointmentItem.classList.add('appointment-item');
-                appointmentItem.innerHTML = `
-                        <div class="appointment-details">
-                            <h4>${appointment.patient}</h4>
-                            <p class="appointment-meta">${appointment.time} - ${appointment.date}</p>
-                            <p class="appointment-meta">Reason: ${appointment.reason}</p>
-                        </div>
-                    `;
-                appointmentsListContainer.appendChild(appointmentItem);
-            });
-        }
-    });
-</script>
-</head>
 
 <body>
-    <div class="maincontainer">
-        <h1>Welcome Mr. John</h1>
 
-        <div class="dashboard-nav">
-            <button data-tab="dashboard-home" class="active">Dashboard</button>
-            <button data-tab="appointments-tab">Appointments</button>
-            <button data-tab="recent-patients-tab">Recent Patients</button>
-        </div>
-
-        <div class="dashboard-content">
-            <div id="dashboard-home" class="active">
-                <div class="dashboard-overview">
-                    <div class="overview-card earnings">
-                        <div class="card-content">
-                            <span class="card-title">Clinic Earnings</span>
-                            <span class="card-value">100PHP</span>
-                        </div>
-                    </div>
-
-                    <div class="overview-card patients">
-                        <div class="card-content">
-                            <span class="card-title">Total Patient</span>
-                            <span class="card-value">22</span>
-                        </div>
-                    </div>
-
-                    <div class="overview-card appointments-count">
-                        <div class="card-content">
-                            <span class="card-title">Appointments</span>
-                            <span class="card-value">50</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dashboard-widgets">
-                    <div class="widget appointments-calendar">
-                        <h2 class="widget-title">Appointments Calendar</h2>
-                        <?php include 'calendar.php'; ?>
-                    </div>
-                </div>
-            </div>
-
-            <div id="appointments-tab">
-                <h2 class="widget-title">Upcoming Appointments</h2>
-                <div id="appointments-tab-content" class="appointments-list-container">
-                </div>
-            </div>
-
-            <div id="recent-patients-tab">
-                <h2 class="widget-title">Recent Patients</h2>
-                <table class="recent-patients-table">
-                    <thead>
-                        <tr>
-                            <th>Patient</th>
-                            <th>Date</th>
-                            <th>Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-                <div class="see-more">
-                    <a href="#">See More...</a>
-                </div>
+    <div class="parent">
+        <div class="add-patient-doctor">
+            <h3>Add appointment to the schedule</h3>
+            <button class="add-appointment-button">+ Add Appointment</button>
+            <div class="doctor-image-container">
+                <img src="resources/doctor.svg" alt="Doctor Illustration">
             </div>
         </div>
+        <div class="stats">
+            <div class="stat-line">
+                <span class="stat-label">Total appointments this month</span>
+                <span class="stat-number">50</span>
+            </div>
+            <div class="stat-line">
+                <span class="stat-label">Total pending appointments this month</span>
+                <span class="stat-number">40</span>
+            </div>
+            <div class="stat-line">
+                <span class="stat-label">Total completed appointments this month</span>
+                <span class="stat-number">10</span>
+            </div>
+        </div>
+        <div class="calender">
+            <?php include 'views/components/pocket_calendar.php'; ?>
+        </div>
+        <div class="appointment-requests">
+            <div class="appointment-requests-header">
+                <h3>Appointment Requests</h3>
+                <button class="view-all-button">View all</button>
+            </div>
+            <ul class="appointment-requests-list">
+                <li class="appointment-request-item">
+                    <div class="patient-info">
+                        <div class="patient-avatar">
+                            <span>D</span>
+                        </div>
+                        <span class="patient-name">Dan</span>
+                    </div>
+                    <span class="appointment-date">March 30, 2025</span>
+                    <span class="appointment-time">2:00 pm</span>
+                    <div class="appointment-actions">
+                        <button class="accept-button" data-id="1">Accept</button>
+                        <button class="reject-button" data-id="1">Reject</button>
+                    </div>
+                </li>
+                <li class="appointment-request-item">
+                    <div class="patient-info">
+                        <div class="patient-avatar">
+                            <span>A</span>
+                        </div>
+                        <span class="patient-name">Alice</span>
+                    </div>
+                    <span class="appointment-date">April 02, 2025</span>
+                    <span class="appointment-time">10:30 am</span>
+                    <div class="appointment-actions">
+                        <button class="accept-button" data-id="2">Accept</button>
+                        <button class="reject-button" data-id="2">Reject</button>
+                    </div>
+                </li>
+            </ul>
+            <div class="no-requests">No new appointment requests.</div>
+        </div>
     </div>
-    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const appointmentRequestsContainer = document.querySelector('.appointment-requests');
+            const appointmentRequestsList = appointmentRequestsContainer.querySelector('.appointment-requests-list');
+            const noRequestsMessage = appointmentRequestsContainer.querySelector('.no-requests');
+
+            const requests = [
+                { patient: 'Dan', date: 'March 30, 2025', time: '2:00 pm', id: 1 },
+                { patient: 'Alice', date: 'April 02, 2025', time: '10:30 am', id: 2 },
+                { patient: 'Bob', date: 'April 05, 2025', time: '11:00 am', id: 3 },
+                { patient: 'Charlie', date: 'April 08, 2025', time: '3:15 pm', id: 4 },
+                { patient: 'Eve', date: 'April 10, 2025', time: '9:00 am', id: 5 },
+                { patient: 'Frank', date: 'April 12, 2025', time: '1:45 pm', id: 6 },
+            ];
+
+            if (requests.length > 0) {
+                noRequestsMessage.style.display = 'none';
+                appointmentRequestsList.innerHTML = '';
+                requests.forEach(request => {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('appointment-request-item');
+                    listItem.innerHTML = `
+                        <div class="patient-info">
+                            <div class="patient-avatar">
+                                <span>${request.patient.charAt(0).toUpperCase()}</span>
+                            </div>
+                            <span class="patient-name">${request.patient}</span>
+                        </div>
+                        <span class="appointment-date">${request.date}</span>
+                        <span class="appointment-time">${request.time}</span>
+                        <div class="appointment-actions">
+                            <button class="accept-button" data-id="${request.id}">Accept</button>
+                            <button class="reject-button" data-id="${request.id}">Reject</button>
+                        </div>
+                    `;
+                    appointmentRequestsList.appendChild(listItem);
+                });
+
+                appointmentRequestsList.addEventListener('click', (event) => {
+                    if (event.target.classList.contains('accept-button')) {
+                        const requestId = event.target.dataset.id;
+                        console.log(`Appointment ${requestId} accepted.`);
+                        event.target.closest('.appointment-request-item').remove();
+                        updateNoRequestsMessage();
+                    } else if (event.target.classList.contains('reject-button')) {
+                        const requestId = event.target.dataset.id;
+                        console.log(`Appointment ${requestId} rejected.`);
+                        event.target.closest('.appointment-request-item').remove();
+                        updateNoRequestsMessage();
+                    }
+                });
+            } else {
+                appointmentRequestsList.style.display = 'none';
+                noRequestsMessage.style.display = 'block';
+            }
+
+            function updateNoRequestsMessage() {
+                if (appointmentRequestsList.children.length === 0) {
+                    appointmentRequestsList.style.display = 'none';
+                    noRequestsMessage.style.display = 'block';
+                }
+            }
+        });
+    </script>
 </body>
