@@ -1,29 +1,32 @@
 <?php
-
-class User {
+class User
+{
     private $role;
     private $name;
-
-    public function __construct($role = 'guest') {
+    public function __construct($role, $name)
+    {
         $this->role = $role;
-        $this->name = "Nurse";
+        $this->name = $name;
     }
 
-    // Get the user role
-    public function getRole() {
+    public function getRole()
+    {
         return $this->role;
     }
 
-    // Get the user name
-    public function getName() {
+    public function getName()
+    {
         return $this->name;
     }
 
-    // Set user role (in case you need to update the role)
-    public function setRole($role) {
-        $this->role = $role;
+    public static function fetchUser($userId)
+    {
+        // This is a simulation, in real use, this should fetch from the database
+        if ($userId == 1) {
+            return new User("nurse", "Nurse Jane");
+        }
+        // Return a default user if not found
+        return new User("guest", "Guest");
     }
-
 }
-
 ?>
