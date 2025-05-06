@@ -1,0 +1,6 @@
+RewriteEngine On
+RewriteBase /it38b-Enterprise/
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ public/index.php/$1 [L,QSA]
