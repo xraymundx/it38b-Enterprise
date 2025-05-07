@@ -11,13 +11,10 @@
         display: grid;
         grid-template-columns: repeat(5, 1fr);
         grid-template-rows: repeat(5, auto);
-        /* Use auto for rows to fit content */
         grid-column-gap: 20px;
         grid-row-gap: 20px;
         max-width: 1200px;
-        /* Optional: Limit the width of the dashboard */
         margin: 0 auto;
-        /* Optional: Center the dashboard */
     }
 
     .add-patient-doctor {
@@ -29,14 +26,14 @@
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
         display: grid;
         grid-template-columns: 1fr 1fr;
-        /* Two columns */
-        grid-template-rows: auto auto;
-        /* Two rows */
+        grid-template-rows: auto auto auto;
+        /* Added a row for the slot button */
         grid-template-areas:
             "title image"
-            "button image";
+            "appointment-button image"
+            "slot-button image";
+        /* Added grid area for slot button */
         gap: 10px;
-        /* Adjust as needed */
         align-items: start;
     }
 
@@ -44,27 +41,38 @@
         grid-area: title;
         margin: 0;
         font-size: 1.5em;
-        /* Bigger title text */
         color: #333;
-        /* Adjust color if needed */
     }
 
-    .add-appointment-button {
-        grid-area: button;
+    .add-appointment-button,
+    .add-slot-button {
+        /* Apply styles to both buttons */
         background-color: #6c5dd3;
         color: white;
         border: none;
         border-radius: 20px;
-        /* More rounded button */
         padding: 12px 20px;
-        /* Slightly bigger padding */
         cursor: pointer;
         font-size: 1em;
-        /* Slightly bigger font size */
         transition: background-color 0.3s ease;
+        text-decoration: none;
+        /* Remove default link underline */
+        display: inline-block;
+        /* Allows setting padding and margin */
+        text-align: center;
+        /* Center text within the button */
     }
 
-    .add-appointment-button:hover {
+    .add-appointment-button {
+        grid-area: appointment-button;
+    }
+
+    .add-slot-button {
+        grid-area: slot-button;
+    }
+
+    .add-appointment-button:hover,
+    .add-slot-button:hover {
         background-color: #5649a8;
     }
 
@@ -76,9 +84,7 @@
         overflow: hidden;
         display: flex;
         justify-content: flex-end;
-        /* Align image to the right */
         align-items: center;
-        /* Vertically center image if needed */
     }
 
     .doctor-image-container img {
@@ -91,7 +97,6 @@
         overflow: hidden;
     }
 
-
     .stats {
         border: 1px solid #333;
         grid-area: 1 / 4 / 3 / 6;
@@ -102,25 +107,21 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
-        /* Spacing between stat lines */
     }
 
     .stat-line {
         display: flex;
         flex-direction: column;
-        /* Stack label and number */
     }
 
     .stat-label {
         font-size: 0.8em;
-        /* Small label text */
         color: #777;
         margin-bottom: 2px;
     }
 
     .stat-number {
         font-size: 2em;
-        /* Extra-large number text */
         color: #333;
         font-weight: bold;
     }
@@ -245,7 +246,7 @@
         padding: 8px 10px;
         cursor: pointer;
         font-size: 0.85em;
-        transition: opacity 0.3s ease;
+        a transition: opacity 0.3s ease;
     }
 
     .accept-button {
@@ -274,7 +275,6 @@
     @media (max-width: 768px) {
         .parent {
             grid-template-columns: 1fr;
-            /* Stack items on smaller screens */
         }
 
         .add-patient-doctor,
@@ -283,7 +283,6 @@
         .new-patient-list,
         .appointment-requests {
             grid-area: auto;
-            /* Let them flow naturally */
             margin-bottom: 20px;
         }
     }
@@ -294,7 +293,10 @@
     <div class="parent">
         <div class="add-patient-doctor">
             <h3>Add appointment to the schedule</h3>
-            <button class="add-appointment-button">+ Add Appointment</button>
+            <a href="/appointments/add" class="add-appointment-button">+ Add Appointment</a>
+
+            <a href="/slots/add" class="add-slot-button">+ Add Slot</a>
+
             <div class="doctor-image-container">
                 <img src="resources/doctor.svg" alt="Doctor Illustration">
             </div>
@@ -322,34 +324,6 @@
                 <button class="view-all-button">View all</button>
             </div>
             <ul class="appointment-requests-list">
-                <li class="appointment-request-item">
-                    <div class="patient-info">
-                        <div class="patient-avatar">
-                            <span>D</span>
-                        </div>
-                        <span class="patient-name">Dan</span>
-                    </div>
-                    <span class="appointment-date">March 30, 2025</span>
-                    <span class="appointment-time">2:00 pm</span>
-                    <div class="appointment-actions">
-                        <button class="accept-button" data-id="1">Accept</button>
-                        <button class="reject-button" data-id="1">Reject</button>
-                    </div>
-                </li>
-                <li class="appointment-request-item">
-                    <div class="patient-info">
-                        <div class="patient-avatar">
-                            <span>A</span>
-                        </div>
-                        <span class="patient-name">Alice</span>
-                    </div>
-                    <span class="appointment-date">April 02, 2025</span>
-                    <span class="appointment-time">10:30 am</span>
-                    <div class="appointment-actions">
-                        <button class="accept-button" data-id="2">Accept</button>
-                        <button class="reject-button" data-id="2">Reject</button>
-                    </div>
-                </li>
             </ul>
             <div class="no-requests">No new appointment requests.</div>
         </div>

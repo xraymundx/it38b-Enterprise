@@ -2,13 +2,14 @@
 session_start();
 
 // Include the roles configuration and the User class
-require_once('config/roles.php'); // Config file for roles
-require_once('models/user.php');  // The User model
+require_once('config/roles.php');
+require_once('models/user.php');
 
-// Simulate fetching the user ID (e.g., after login)
-$userId = isset($_SESSION['userId']) ? $_SESSION['userId'] : 1; // Default to 1 for testing (nurse)
+// Simulate the nurse user by hardcoding user ID and role for testing
+$userId = isset($_SESSION['userId']) ? $_SESSION['userId'] : 1; // Default to 1 for testing, simulate nurse
 
 // Simulate getting the user from the database based on userId
+// In a real scenario, this would be fetched from the database
 $user = User::fetchUser($userId);
 
 // Store the user in the session
@@ -22,9 +23,7 @@ if (isset($_SESSION['user'])) {
     $role = $user->getRole();
 
     // Simulate permissions for the logged-in user
-    $permissions = $roles[$role];
-
-
+    $permissions = isset($roles[$role]) ? $roles[$role] : [];
 
     // Route based on the role
     switch ($role) {
@@ -38,8 +37,8 @@ if (isset($_SESSION['user'])) {
             include('views/admin/index.php');
             break;
         case 'guest':
-            include('views/guest/index.php');
-            break;
+            header('Location: home.php');
+            exit;
         default:
             echo "Invalid user role.";
             break;
