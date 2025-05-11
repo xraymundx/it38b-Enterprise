@@ -321,7 +321,7 @@
         <div class="appointment-requests">
             <div class="appointment-requests-header">
                 <h3>Appointment Requests</h3>
-                <button class="view-all-button">View all</button>
+                <a href="appointments_all.php" class="view-all-button">View all</a>
             </div>
             <ul class="appointment-requests-list">
             </ul>

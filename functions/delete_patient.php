@@ -2,11 +2,11 @@
 // Include database connection
 require_once '../config/config.php'; // Adjust the path if needed
 
-if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-    $patientId = intval($_GET['id']);
+if (isset($_GET['patient_id']) && is_numeric($_GET['patient_id'])) {
+    $patientId = intval($_GET['patient_id']);
 
     // Process the deletion
-    $query = "DELETE FROM patients WHERE id = ?";
+    $query = "DELETE FROM patients WHERE patient_id = ?";
     $stmt = $conn->prepare($query);
     $stmt->bind_param("i", $patientId);
 

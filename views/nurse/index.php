@@ -11,9 +11,7 @@
         body {
             margin: 0;
             font-family: 'Poppins', sans-serif;
-            /* Apply Poppins font */
             background-color: #f3f4f6;
-            /* Light gray background */
         }
 
         .toolbar {
@@ -33,7 +31,6 @@
             color: #111827;
             box-sizing: border-box;
             flex-wrap: wrap;
-            /* Important for allowing stacking on small screens */
         }
 
         .toolbar.open {
@@ -46,7 +43,6 @@
             align-items: center;
             gap: 1rem;
             min-width: 0;
-            /* Prevents overflow issues with long titles */
         }
 
         .toolbar-left h2 {
@@ -57,7 +53,6 @@
             color: #111827;
         }
 
-        /* 🔧 Menu Button */
         .toolbar-left button {
             background: none;
             border: none;
@@ -70,14 +65,12 @@
             justify-content: center;
             transition: color 0.2s ease;
             flex-shrink: 0;
-            /* Prevent shrinking */
         }
 
         .toolbar-left button .material-symbols-outlined {
             font-size: inherit;
         }
 
-        /* 🔍 Search */
         .toolbar-search {
             display: flex;
             align-items: center;
@@ -96,27 +89,22 @@
             outline: none;
             flex: 1;
             font-size: 1rem;
-            /* Adjusted font size for Poppins */
             color: #374151;
             min-width: 0;
-            /* Important for preventing input overflow */
         }
 
         .toolbar-search .material-symbols-outlined {
             font-size: 1.2rem;
             color: #6b7280;
             flex-shrink: 0;
-            /* Prevent shrinking */
         }
 
-        /* ⚙️ Actions */
         .toolbar-actions {
             display: flex;
             align-items: center;
             gap: 1rem;
             white-space: nowrap;
             flex-shrink: 0;
-            /* Prevent shrinking */
         }
 
         .toolbar-actions button:hover {
@@ -136,9 +124,7 @@
             width: 0;
             overflow-x: hidden;
             background: linear-gradient(to bottom, #000144 46%, #000144 67%, #0002AA 100%);
-            /* Dark blue gradient */
             color: white;
-            /* White sidenav text */
             transition: width 0.3s ease;
             z-index: 1001;
             display: flex;
@@ -154,51 +140,46 @@
             justify-content: space-between;
             align-items: center;
             padding: 20px;
-            /* Adjusted padding */
             background-color: rgba(0, 0, 0, 0.2);
-            /* Darker header background */
         }
 
         .sidenav-header h1 {
             margin: 0;
             font-size: 2rem;
-            /* Retained size */
             color: white;
         }
 
         .sidenav-header .closebtn {
             font-size: 2rem;
-            /* Adjusted size */
             color: white;
             text-decoration: none;
             cursor: pointer;
         }
 
         .sidenav-item {
-            padding: 20px 20px;
-            margin: 5px 10px;
+            padding: 12px 20px;
+            margin: 2px 10px;
             color: white;
             display: flex;
             align-items: center;
             gap: 10px;
             text-decoration: none;
             transition: background-color 0.2s ease;
+            border-radius: 6px;
         }
 
         .sidenav-item:hover,
         .sidenav-item.active {
             background-color: #0ea5e9;
             color: white;
-            border-radius: 8px;
-            margin-top: 5px;
-            margin-bottom: 5px;
+            margin-top: 2px;
+            margin-bottom: 2px;
             margin-left: 10px;
             margin-right: 10px;
         }
 
         .sidenav-content {
             margin: 30px 0 0 0;
-            /* Adjusted padding */
             overflow-y: auto;
             flex: 1;
         }
@@ -219,6 +200,35 @@
             overflow-y: auto;
             scrollbar-width: none;
             -ms-overflow-style: none;
+        }
+
+        .subnav {
+            display: none;
+            flex-direction: column;
+            margin-left: 20px;
+            margin-top: 6px;
+            gap: 4px;
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            padding-left: 15px;
+        }
+
+        .subnav.open {
+            display: flex;
+        }
+
+        .subnav a {
+            text-decoration: none;
+            color: #d1d5db;
+            font-size: 0.85rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .subnav a:hover,
+        .subnav a.active {
+            background-color: #0ea5e9;
+            color: white;
         }
 
         .sidenav-footer>*::-webkit-scrollbar {
@@ -388,21 +398,16 @@
         /* Specific color for MF */
         .sidenav-header h1 .mf {
             color: #00B4D8;
-            /* Your preferred blue for MF */
             font-size: inherit;
-            /* Inherit size from h1 */
         }
 
-        /* Style for CLINIC to ensure it's white if needed */
         .sidenav-header h1 .clinic {
             color: white;
             font-size: inherit;
-            /* Inherit size from h1 */
         }
 
         .sidenav-header h1 {
             font-size: 2rem;
-            /* Increased size for "MF CLINIC" */
         }
     </style>
 </head>
@@ -435,15 +440,23 @@
             <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
         </div>
         <div class="sidenav-content">
-            <a href="?page=dashboard" class="sidenav-item active">
+            <a href="?page=dashboard" class="sidenav-item">
                 <span class="material-symbols-outlined">home</span> Dashboard
             </a>
             <a href="?page=patients" class="sidenav-item">
                 <span class="material-symbols-outlined">group</span> Patients
             </a>
-            <a href="?page=appointments" class="sidenav-item">
-                <span class="material-symbols-outlined">calendar_today</span> Appointments
-            </a>
+            <div class="sidenav-group">
+                <a href="?page=appointments" class="sidenav-item" onclick="toggleSubnav(this)">
+                    <span class="material-symbols-outlined">calendar_today</span> Appointments
+                </a>
+                <div class="subnav">
+                    <a href="?page=appointments&status=pending">Pending</a>
+                    <a href="?page=appointments&status=approved">Approved</a>
+                    <a href="?page=appointments&status=completed">Completed</a>
+                    <a href="?page=appointments&status=rejected">Rejected</a>
+                </div>
+            </div>
             <a href="?page=medical_records" class="sidenav-item">
                 <span class="material-symbols-outlined">note</span> Medical Records
             </a>
@@ -471,36 +484,46 @@
             </div>
         </div>
     </div>
-
     <div class="main open">
         <div class="maincontainer">
             <?php
-            // Check the 'page' query parameter and include the corresponding file
-            if (isset($_GET['page'])) {
-                $page = $_GET['page'];
-                switch ($page) {
-                    case 'dashboard':
-                        include('dashboard.php');
-                        break;
-                    case 'patients':
-                        include('patients.php');
-                        break;
-                    case 'appointments':
-                        include('appointments.php');
-                        break;
-                    case 'medical_records':
-                        include('medical_records.php');
-                        break;
-                    case 'billing_records':
-                        include('billing_records.php');
-                        break;
-                    default:
-                        echo "Page not found.";
+            // Function to include the appropriate page
+            function includePage()
+            {
+                if (isset($_GET['page'])) {
+                    $page = $_GET['page'];
+                    switch ($page) {
+                        case 'dashboard':
+                            include('dashboard.php');
+                            break;
+                        case 'patients':
+                            include('patients.php');
+                            break;
+                        case 'appointments':
+
+                            if (isset($_GET['status'])) {
+                                $status = $_GET['status'];
+                                include("appointments_{$status}.php");
+                                break;
+                            } else {
+                                include('appointments.php');
+                                break;
+                            }
+                        case 'medical_records':
+                            include('medical_records.php');
+                            break;
+                        case 'billing_records':
+                            include('billing_records.php');
+                            break;
+                        default:
+                            echo "Page not found.";
+                    }
+                } else {
+                    include('dashboard.php'); // Default
                 }
-            } else {
-                // Default to dashboard if no page is specified
-                include('dashboard.php');
             }
+
+            includePage();
             ?>
         </div>
     </div>
@@ -510,7 +533,8 @@
         const main = document.querySelector(".main");
         const toolbar = document.querySelector(".toolbar");
         const pageTitleElement = document.getElementById("pageTitle");
-
+        const sidenavItems = document.querySelectorAll('.sidenav-item');
+        const sidenavGroups = document.querySelectorAll('.sidenav-group');
         let isNavOpen = true;
 
         function openNav() {
@@ -533,20 +557,76 @@
 
         function updateToolbarTitle() {
             const urlParams = new URLSearchParams(window.location.search);
-            const page = urlParams.get('page')
-            pageTitleElement.textContent = page.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+            const page = urlParams.get('page');
+            const status = urlParams.get('status');
+            if (pageTitleElement && page) {
+                let title = page.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+                if (status) {
+                    title += " - " + status.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+                }
+                pageTitleElement.textContent = title;
+            } else if (pageTitleElement) {
+                pageTitleElement.textContent = 'Dashboard';
+            }
         }
 
         function updateActiveLink() {
-            const links = document.querySelectorAll('.sidenav-item');
-            const page = new URLSearchParams(window.location.search).get('page');
-            links.forEach(link => {
-                link.classList.toggle('active', link.href.includes(page));
+            const currentUrl = window.location.href;
+
+            sidenavItems.forEach(item => {
+                item.classList.remove('active');
+                const href = item.getAttribute('href');
+                if (currentUrl.includes(href) && href !== '?page=') {
+                    item.classList.add('active');
+                }
             });
+
+            sidenavGroups.forEach(group => {
+                const parentLink = group.querySelector('.sidenav-item');
+                const subnav = group.querySelector('.subnav');
+                const subnavLinks = subnav ? subnav.querySelectorAll('a') : [];
+                let isSubnavActive = false;
+                let isParentActive = false;
+
+                if (parentLink && currentUrl.includes(parentLink.getAttribute('href')) && parentLink.getAttribute('href') !== '?page=') {
+                    isParentActive = true;
+                }
+
+                subnavLinks.forEach(subLink => {
+                    subLink.classList.remove('active');
+                    if (currentUrl.includes(subLink.getAttribute('href'))) {
+                        subLink.classList.add('active');
+                        isSubnavActive = true;
+                    }
+                });
+
+                if (parentLink && subnav) {
+                    parentLink.classList.remove('active-parent');
+                    subnav.classList.remove('open');
+
+                    if (isSubnavActive || isParentActive) {
+                        parentLink.classList.add('active-parent');
+                        subnav.classList.add('open');
+                        if (isParentActive && !isSubnavActive && subnavLinks.length > 0) {
+                            //do nothing.
+                        }
+                    } else if (currentUrl.includes(parentLink.getAttribute('href')) && subnavLinks.length === 0) {
+                        parentLink.classList.add('active');
+                    }
+                }
+            });
+        }
+        function toggleSubnav(element) {
+            const parent = element.parentElement;  // Get the parent element
+            const subnav = parent.querySelector('.subnav'); // Find the subnav within the parent.
+
+            if (subnav) {
+                subnav.classList.toggle('open');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            openNav(); // Ensure it's open at start
+            openNav();
             updateToolbarTitle();
             updateActiveLink();
             updateMobileSearchPlaceholder();
@@ -556,17 +636,11 @@
             updateToolbarTitle();
             updateActiveLink();
         });
+
         function updateMobileSearchPlaceholder() {
-            if (window.innerWidth <= 768) {
-                const searchInput = document.querySelector('.toolbar-search input');
-                if (searchInput) {
-                    searchInput.placeholder = 'Search';
-                }
-            } else {
-                const searchInput = document.querySelector('.toolbar-search input');
-                if (searchInput) {
-                    searchInput.placeholder = 'Search anything...';
-                }
+            const searchInput = document.querySelector('.toolbar-search input');
+            if (searchInput) {
+                searchInput.placeholder = window.innerWidth <= 768 ? 'Search' : 'Search anything...';
             }
         }
 

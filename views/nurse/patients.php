@@ -12,16 +12,14 @@ $page = isset($_GET['page_num']) ? intval($_GET['page_num']) : 1;
 $startIndex = ($page - 1) * $recordsPerPage;
 
 // Fetch the total number of patients
-$totalPatientsQuery = "SELECT COUNT(id) AS total FROM patients";
+$totalPatientsQuery = "SELECT COUNT(patient_id) AS total FROM patients";
 $totalResult = $conn->query($totalPatientsQuery);
 $totalRowCount = $totalResult->fetch_assoc()['total'];
 $totalPages = ceil($totalRowCount / $recordsPerPage);
 
 // Fetch patients for the current page
-$query = "SELECT id, first_name, last_name, date_of_birth, email, phone
-          FROM patients
-          ORDER BY last_name, first_name
-          LIMIT ?, ?";
+$query = "SELECT patient_id, first_name, last_name, date_of_birth, email, phone FROM patients ORDER BY last_name, first_name LIMIT ?, ?";
+
 $stmt = $conn->prepare($query);
 $stmt->bind_param("ii", $startIndex, $recordsPerPage);
 $stmt->execute();
@@ -390,18 +388,20 @@ function generatePaginationLinks($currentPage, $totalPages)
                     <?php if (!empty($patients)): ?>
                         <?php foreach ($patients as $patient): ?>
                             <tr>
-                                <td data-label="Patient ID"><?php echo htmlspecialchars($patient['id']); ?></td>
+                                <td data-label="Patient ID"><?php echo htmlspecialchars($patient['patient_id']); ?></td>
                                 <td data-label="First Name"><?php echo htmlspecialchars($patient['first_name']); ?></td>
                                 <td data-label="Last Name"><?php echo htmlspecialchars($patient['last_name']); ?></td>
                                 <td data-label="Date of Birth"><?php echo htmlspecialchars($patient['date_of_birth']); ?></td>
                                 <td data-label="Email"><?php echo htmlspecialchars($patient['email']); ?></td>
                                 <td data-label="Phone"><?php echo htmlspecialchars($patient['phone']); ?></td>
                                 <td class="patient-actions" data-label="Actions">
-                                    <a href="functions/view_patient.php?id=<?php echo htmlspecialchars($patient['id']); ?>"><span
-                                            class="material-icons">visibility</span> View</a>
-                                    <a href="functions/edit_patient.php?id=<?php echo htmlspecialchars($patient['id']); ?>"><span
+                                    <a
+                                        href="functions/view_patient.php?id=<?php echo htmlspecialchars($patient['patient_id']); ?>">
+                                        <span class="material-icons">visibility</span> View</a>
+                                    <a
+                                        href="functions/edit_patient.php?id=<?php echo htmlspecialchars($patient['patient_id']); ?>"><span
                                             class="material-icons">edit</span> Edit</a>
-                                    <a href="functions/delete_patient.php?id=<?php echo htmlspecialchars($patient['id']); ?>"
+                                    <a href="functions/delete_patient.php?id=<?php echo htmlspecialchars($patient['patient_id']); ?>"
                                         onclick="return confirm('Are you sure?')"><span class="material-icons">delete</span>
                                         Delete</a>
                                 </td>

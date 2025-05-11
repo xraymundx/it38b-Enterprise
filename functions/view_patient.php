@@ -10,7 +10,8 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $patientId = intval($_GET['id']);
 
 // Fetch patient
-$query = "SELECT id, first_name, last_name, date_of_birth, email, phone FROM patients WHERE id = ?";
+$query = "SELECT patient_id, first_name, last_name, date_of_birth, email, phone FROM patients WHERE patient_id = ?";
+
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $patientId);
 $stmt->execute();
@@ -30,50 +31,83 @@ if (!$patient) {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>View Patient</title>
+    <title>Patient Details</title>
     <style>
         body {
-            font-family: sans-serif;
-            background-color: #f4f6f8;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e9ecef;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             box-sizing: border-box;
         }
 
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
         }
 
         h1 {
-            color: #333;
+            color: #343a40;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 500;
+        }
+
+        .patient-details {
+            margin-bottom: 30px;
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: center;
             margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #dee2e6;
         }
 
-        .patient-details div {
-            margin-bottom: 15px;
+        .detail-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
         }
 
-        .patient-details strong {
-            display: inline-block;
-            width: 120px;
-            font-weight: bold;
-            color: #555;
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            width: 150px;
+            margin-right: 20px;
+        }
+
+        .detail-value {
+            color: #212529;
+            font-size: 1.1rem;
         }
 
         .back-link {
-            display: block;
-            margin-top: 20px;
-            color: #6c5dd3;
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #007bff;
+            color: #ffffff;
             text-decoration: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
         }
 
         .back-link:hover {
-            text-decoration: underline;
+            background-color: #0056b3;
         }
     </style>
 </head>
@@ -82,17 +116,37 @@ if (!$patient) {
     <div class="container">
         <h1>Patient Details</h1>
         <div class="patient-details">
-            <div><strong>Patient ID:</strong> <?= htmlspecialchars($patient['id']) ?></div>
-            <div><strong>First Name:</strong> <?= htmlspecialchars($patient['first_name']) ?></div>
-            <div><strong>Last Name:</strong> <?= htmlspecialchars($patient['last_name']) ?></div>
-            <div><strong>Date of Birth:</strong> <?= htmlspecialchars($patient['date_of_birth']) ?></div>
-            <div><strong>Email:</strong> <?= htmlspecialchars($patient['email']) ?></div>
-            <div><strong>Phone:</strong> <?= htmlspecialchars($patient['phone']) ?></div>
+            <div class="detail-row">
+                <strong class="detail-label">Patient ID:</strong>
+                <span class="detail-value"><?php echo htmlspecialchars($patient['patient_id']); ?></span>
+            </div>
+            <div class="detail-row">
+                <strong class="detail-label">First Name:</strong>
+                <span class="detail-value"><?php echo htmlspecialchars($patient['first_name']); ?></span>
+            </div>
+            <div class="detail-row">
+                <strong class="detail-label">Last Name:</strong>
+                <span class="detail-value"><?php echo htmlspecialchars($patient['last_name']); ?></span>
+            </div>
+            <div class="detail-row">
+                <strong class="detail-label">Date of Birth:</strong>
+                <span
+                    class="detail-value"><?php echo htmlspecialchars(date("F j, Y", strtotime($patient['date_of_birth']))); ?></span>
+            </div>
+            <div class="detail-row">
+                <strong class="detail-label">Email:</strong>
+                <span class="detail-value"><?php echo htmlspecialchars($patient['email']); ?></span>
+            </div>
+            <div class="detail-row">
+                <strong class="detail-label">Phone:</strong>
+                <span class="detail-value"><?php echo htmlspecialchars($patient['phone']); ?></span>
+            </div>
         </div>
-        <a href="/it38b-Enterprise/index.php?page=patients" class="back-link">Back to Patients List</a>
-
+        <a href="/it38b-Enterprise/index.php?page=patients" class="back-link">Back to Patients</a>
     </div>
 </body>
 
 </html>
-<?php $conn->close(); ?>
+<?php
+$conn->close();
+?>

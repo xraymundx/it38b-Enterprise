@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         // Check if the email already exists
-        $checkStmt = $conn->prepare("SELECT id FROM patients WHERE email = ?");
+        $checkStmt = $conn->prepare("SELECT patient_id FROM patients WHERE email = ?");
         $checkStmt->bind_param("s", $email);
         $checkStmt->execute();
         $checkStmt->store_result();

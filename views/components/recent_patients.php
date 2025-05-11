@@ -3,18 +3,25 @@
 require_once 'config/config.php'; // Adjust the path as needed
 
 // Fetch the 3 most recent patients, their first and last names, and descriptions
-$query = "SELECT p.id, p.first_name, p.last_name, p.created_at, d.description
+$query = "SELECT p.patient_id, p.first_name, p.last_name, p.created_at, d.description
           FROM patients p
-          LEFT JOIN patient_descriptions d ON p.id = d.patient_id
+          LEFT JOIN patient_descriptions d ON p.patient_id = d.patient_id
           ORDER BY p.created_at DESC LIMIT 3";
 $result = $conn->query($query);
 
-// Check if there are results
+// Check if the query was successful AND if there are results
 $recentPatients = [];
-if ($result && $result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $recentPatients[] = $row;
+if ($result) { // First, check if the query executed successfully
+    if ($result->num_rows > 0) {
+        while ($row = $result->fetch_assoc()) {
+            $recentPatients[] = $row;
+        }
     }
+    $result->free(); // It's good practice to free the result set
+} else {
+    // Handle the error if the query failed
+    echo "Error executing query: " . $conn->error;
+    // Optionally, you might want to log the error or display a user-friendly message
 }
 ?>
 <style>

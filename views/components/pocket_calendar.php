@@ -351,7 +351,7 @@
 
         viewAllAppointmentsButton.addEventListener('click', () => {
             // Redirect to the appointments list page
-            window.location.href = 'appointments/list';
+            window.location.href = 'index.php?page=appointments&status=all';
         });
 
         generateCalendar(currentDate);
