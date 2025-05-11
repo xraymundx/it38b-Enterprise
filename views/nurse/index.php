@@ -461,6 +461,9 @@
                 </div>
             </div>
             <a href="?page=medical_records" class="sidenav-item">
+                <span class="material-symbols-outlined">note</span>
+            </a>
+            <a href="?page=medical_records" class="sidenav-item">
                 <span class="material-symbols-outlined">note</span> Medical Records
             </a>
             <a href="?page=billing_records" class="sidenav-item">
@@ -480,7 +483,7 @@
                     <span class="material-symbols-outlined">settings</span>
                     Settings
                 </a>
-                <a href="#">
+                <a href="logout.php">
                     <span class="material-symbols-outlined">logout</span>
                     Log Out
                 </a>

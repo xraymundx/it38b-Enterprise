@@ -174,8 +174,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         /* Bottom Logo Styles */
         .image-section .logo-bottom {
             position: absolute;
-            bottom: 30px;
-            font-size: 24px;
+            bottom: 100px;
+            font-size: 50px;
             font-weight: bold;
             color: black;
             /* Default color for 'CLINIC' */

@@ -16,7 +16,7 @@ if (isset($_GET['page'])) {
     <title>MF Clinic</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Rubik+Moonrocks&display=swap" rel="stylesheet">
     <style>
         * {
             box-sizing: border-box;
@@ -120,17 +120,18 @@ if (isset($_GET['page'])) {
         }
 
         .hero {
-            display: flex;
+
             align-items: center;
-            justify-content: space-between;
+
             background-color: rgb(255, 255, 255);
             padding: 0;
+            /* Remove default padding */
             min-height: calc(100vh - 80px);
             width: 100%;
-            flex-wrap: wrap;
             transition: all 0.5s ease-in-out;
             opacity: 0;
             transition: opacity 0.5s ease-in-out;
+            margin: 0;
         }
 
         .hero.fade-in {
@@ -199,6 +200,30 @@ if (isset($_GET['page'])) {
             margin: auto;
         }
 
+        /* Footer Styles */
+        .footer {
+            background-color: #333;
+            color: white;
+            padding: 40px 60px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .footer p {
+            margin-bottom: 10px;
+        }
+
+        .footer a {
+            color: #00bcd4;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: #26c6da;
+        }
+
+
         /* Mobile Styling */
         @media (max-width: 768px) {
             header {
@@ -207,6 +232,11 @@ if (isset($_GET['page'])) {
                 padding: 20px;
                 position: relative;
                 /* Needed for absolute positioning of burger */
+            }
+
+            .footer {
+                padding: 30px 20px;
+                font-size: 0.8em;
             }
 
             nav {
@@ -404,8 +434,15 @@ if (isset($_GET['page'])) {
     </header>
 
     <section class="hero">
+
     </section>
 
+
+    <footer class="footer">
+        <p>&copy; <?php echo date("Y"); ?> MF Clinic. All rights reserved.</p>
+        <p>Located in Manolo Fortich, Northern Mindanao, Philippines.</p>
+        <p><a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+    </footer>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </body>

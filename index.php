@@ -37,7 +37,7 @@ if (isset($_SESSION['user'])) {
             include('views/admin/index.php');
             break;
         case 'guest':
-            header('Location: home.php');
+            header('Location: guest.php');
             exit;
         default:
             echo "Invalid user role.";
