@@ -1,12 +1,6 @@
 RewriteEngine On
 RewriteBase /
 
-# Route /nurse, /doctor, /admin to index.php, passing the role as a parameter
-RewriteRule ^(nurse)/?$ index.php?role=nurse [L]
-RewriteRule ^(doctor)/?$ index.php?role=doctor [L]
-RewriteRule ^(admin)/?$ index.php?role=admin [L]
-
-# If you want a different URL structure, like /nurses/, /doctors/, /administrators/
-# RewriteRule ^nurses/?$ index.php?role=nurse [L]
-# RewriteRule ^doctors/?$ index.php?role=doctor [L]
-# RewriteRule ^administrators/?$ index.php?role=admin [L]
+RewriteRule ^nurse/(.*)?$ nurse/index.php?page=$1 [L,QSA]
+RewriteRule ^doctor/(.*)?$ doctor/index.php?page=$1 [L,QSA]
+RewriteRule ^admin/(.*)?$ admin/index.php?page=$1 [L,QSA]

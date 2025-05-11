@@ -1,6 +1,6 @@
 <?php
 // Include database connection
-require_once 'config/config.php'; // Adjust the path as needed
+require 'config/config.php';
 
 // Number of records to display per page
 $recordsPerPage = 10;

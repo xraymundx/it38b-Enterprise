@@ -1,4 +1,16 @@
 <?php
+
+require 'config/config.php';
+require 'config/functions.php';
+
+// Check if nurse is logged in (adjust based on your authentication)
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'nurse') {
+    header("Location: login.php"); // Redirect if not a nurse
+    exit();
+}
+
+// Potentially other page-specific logic here before the HTML
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -460,8 +472,8 @@
                     <a href="?page=appointments&status=rejected">Rejected</a>
                 </div>
             </div>
-            <a href="?page=medical_records" class="sidenav-item">
-                <span class="material-symbols-outlined">note</span>
+            <a href="?page=schedule" class="sidenav-item">
+                <span class="material-symbols-outlined">schedule</span> Schedule
             </a>
             <a href="?page=medical_records" class="sidenav-item">
                 <span class="material-symbols-outlined">note</span> Medical Records
@@ -515,6 +527,9 @@
                                 include('appointments.php');
                                 break;
                             }
+                        case 'schedule':
+                            include('schedule.php');
+                            break;
                         case 'medical_records':
                             include('medical_records.php');
                             break;

@@ -1,6 +1,6 @@
 <?php
 // Include database connection
-require_once 'config/config.php'; // Adjust the path as needed
+require 'config/config.php';
 
 // Fetch the 3 most recent patients, their first and last names, and descriptions
 $query = "SELECT p.patient_id, p.first_name, p.last_name, p.created_at, d.description
