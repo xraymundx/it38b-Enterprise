@@ -1,3 +1,5 @@
+<?php
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -451,6 +453,7 @@
                     <span class="material-symbols-outlined">calendar_today</span> Appointments
                 </a>
                 <div class="subnav">
+                    <a href="?page=appointments&status=all">All</a>
                     <a href="?page=appointments&status=pending">Pending</a>
                     <a href="?page=appointments&status=approved">Approved</a>
                     <a href="?page=appointments&status=completed">Completed</a>

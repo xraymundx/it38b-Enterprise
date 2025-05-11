@@ -17,11 +17,12 @@ $totalResult = $conn->query($totalAppointmentsQuery);
 $totalRowCount = $totalResult->fetch_assoc()['total'];
 $totalPages = ceil($totalRowCount / $recordsPerPage);
 
-// Fetch pending appointments for the current page, including patient and doctor names
+// Fetch all appointments for the current page, including patient and doctor names
 $query = "SELECT
             a.appointment_id,
             a.appointment_datetime,
             a.reason_for_visit,
+            a.status,
             p.first_name AS patient_first_name,
             p.last_name AS patient_last_name,
             d.first_name AS doctor_first_name,
@@ -29,7 +30,6 @@ $query = "SELECT
           FROM Appointments a
           JOIN Patients p ON a.patient_id = p.patient_id
           JOIN Doctors d ON a.doctor_id = d.doctor_id
-          WHERE a.status = 'Pending'
           ORDER BY a.appointment_datetime
           LIMIT ?, ?";
 $stmt = $conn->prepare($query);
@@ -40,7 +40,7 @@ $appointments = $result->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
 // Function to generate pagination links
-function generatePaginationLinks($currentPage, $totalPages, $basePage = 'appointments_pending')
+function generatePaginationLinks($currentPage, $totalPages, $basePage = 'appointments_all')
 {
     $links = '';
     $range = 2; // Number of page links to show before and after the current page
@@ -66,7 +66,7 @@ function generatePaginationLinks($currentPage, $totalPages, $basePage = 'appoint
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pending Appointments</title>
+    <title>All Appointments</title>
     <style>
         body {
             font-family: sans-serif;
@@ -222,11 +222,11 @@ function generatePaginationLinks($currentPage, $totalPages, $basePage = 'appoint
 
 <body>
     <div class="container">
-        <h1>Pending Appointments</h1>
+        <h1>All Appointments</h1>
 
         <div class="appointments-actions">
             <div class="search-bar">
-                <input type="text" placeholder="Search pending appointments...">
+                <input type="text" placeholder="Search all appointments...">
             </div>
         </div>
 
@@ -239,6 +239,7 @@ function generatePaginationLinks($currentPage, $totalPages, $basePage = 'appoint
                         <th>Patient Name</th>
                         <th>Doctor Name</th>
                         <th>Reason for Visit</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -260,6 +261,7 @@ function generatePaginationLinks($currentPage, $totalPages, $basePage = 'appoint
                                 <td data-label="Reason for Visit">
                                     <?php echo htmlspecialchars($appointment['reason_for_visit']); ?>
                                 </td>
+                                <td data-label="Status"><?php echo htmlspecialchars($appointment['status']); ?></td>
                                 <td class="appointment-actions" data-label="Actions">
                                     <a
                                         href="functions/view_appointment.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>"><span
@@ -267,18 +269,30 @@ function generatePaginationLinks($currentPage, $totalPages, $basePage = 'appoint
                                     <a
                                         href="functions/edit_appointment.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>"><span
                                             class="material-icons">edit</span> Edit</a>
-                                    <a href="functions/confirm_appointment.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>"
-                                        onclick="return confirm('Confirm this appointment?')"><span
-                                            class="material-icons">check_circle</span> Confirm</a>
-                                    <a href="functions/cancel_appointment.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>"
-                                        onclick="return confirm('Cancel this appointment?')"><span
-                                            class="material-icons">cancel</span> Cancel</a>
+                                    <?php if ($appointment['status'] === 'Pending'): ?>
+                                        <a href="functions/confirm_appointment.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>"
+                                            onclick="return confirm('Confirm this appointment?')"><span
+                                                class="material-icons">check_circle</span> Confirm</a>
+                                        <a href="functions/cancel_appointment.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>"
+                                            onclick="return confirm('Cancel this appointment?')"><span
+                                                class="material-icons">cancel</span> Cancel</a>
+                                    <?php elseif ($appointment['status'] === 'Confirmed'): ?>
+                                        <span style="color: green;"><span class="material-icons">check_circle</span>
+                                            Confirmed</span>
+                                        <a href="functions/cancel_appointment.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>"
+                                            onclick="return confirm('Cancel this appointment?')"><span
+                                                class="material-icons">cancel</span> Cancel</a>
+                                    <?php elseif ($appointment['status'] === 'Cancelled'): ?>
+                                        <span style="color: red;"><span class="material-icons">cancel</span> Cancelled</span>
+                                    <?php elseif ($appointment['status'] === 'Completed'): ?>
+                                        <span style="color: gray;"><span class="material-icons">done</span> Completed</span>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="6" style="text-align: center;">No pending appointments found.</td>
+                            <td colspan="7" style="text-align: center;">No appointments found.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -287,7 +301,7 @@ function generatePaginationLinks($currentPage, $totalPages, $basePage = 'appoint
 
         <?php if ($totalPages > 1): ?>
             <div class="pagination">
-                <?php echo generatePaginationLinks($page, $totalPages, 'appointments_pending'); ?>
+                <?php echo generatePaginationLinks($page, $totalPages, 'appointments_all'); ?>
             </div>
         <?php endif; ?>
     </div>

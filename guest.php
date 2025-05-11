@@ -398,7 +398,7 @@ if (isset($_GET['page'])) {
             </ul>
         </nav>
         <div class="auth-links">
-            <a href="#">Log In</a>
+            <a href="login.php" onclick="window.location.href='login.php'; return false;">Log In</a>
             <a href="#">Sign Up</a>
         </div>
     </header>
