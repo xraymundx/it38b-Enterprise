@@ -1,6 +1,6 @@
 <?php
 // Include database connection
-require 'config/config.php';
+require('../config/config.php');
 
 // Number of records to display per page
 $recordsPerPage = 10;
@@ -14,7 +14,7 @@ $startIndex = ($page - 1) * $recordsPerPage;
 // Fetch the total number of pending appointments
 $totalAppointmentsQuery = "SELECT COUNT(appointment_id) AS total
                            FROM Appointments
-                           WHERE status = 'Pending'";
+                           WHERE status = 'Scheduled'";
 $totalResult = $conn->query($totalAppointmentsQuery);
 $totalRowCount = $totalResult->fetch_assoc()['total'];
 $totalPages = ceil($totalRowCount / $recordsPerPage);
@@ -31,7 +31,7 @@ $query = "SELECT
           FROM Appointments a
           JOIN Patients p ON a.patient_id = p.patient_id
           JOIN Doctors d ON a.doctor_id = d.doctor_id
-          WHERE a.status = 'Pending'
+          WHERE a.status = 'Scheduled'
           ORDER BY a.appointment_datetime
           LIMIT ?, ?";
 $stmt = $conn->prepare($query);
@@ -68,7 +68,7 @@ function generatePaginationLinks($currentPage, $totalPages, $basePage = 'appoint
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pending Appointments</title>
+    <title>Scheduled Appointments</title>
     <style>
         body {
             font-family: sans-serif;
@@ -224,7 +224,7 @@ function generatePaginationLinks($currentPage, $totalPages, $basePage = 'appoint
 
 <body>
     <div class="container">
-        <h1>Pending Appointments</h1>
+        <h1>Scheduled Appointments</h1>
 
         <div class="appointments-actions">
             <div class="search-bar">

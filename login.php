@@ -1,90 +1,19 @@
 <?php
-// login.php
 session_start();
 require 'config/config.php';
-require 'config/functions.php';
+require_once 'controllers/AuthController.php';
 
 $error = "";
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $email = $_POST["email"] ?? '';
-    $password = $_POST["password"] ?? '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $auth = new AuthController($conn);
+    $loginResult = $auth->attempt($_POST['email'] ?? '', $_POST['password'] ?? '');
 
-    if ($email && $password) {
-        $stmt = mysqli_prepare($conn, "
-        SELECT
-            u.user_id,
-            u.username,
-            u.email,
-            u.first_name,
-            u.last_name,
-            u.phone_number,
-            u.password_hash,
-            r.role_name AS role_name, -- Get the role name from the roles table
-            u.role_id,          -- Keep the role_id if you still need it
-            u.last_login
-        FROM
-            users u
-        LEFT JOIN
-            roles r ON u.role_id = r.role_id
-        WHERE
-            u.email = ?
-        LIMIT 1
-    ");
-        if ($stmt) {
-            mysqli_stmt_bind_param($stmt, "s", $email); // "s" for string
-            mysqli_stmt_execute($stmt);
-            $result = mysqli_stmt_get_result($stmt);
-
-            if ($result && mysqli_num_rows($result) == 1) {
-                $user = mysqli_fetch_assoc($result);
-                if (password_verify($password, $user['password_hash'])) {
-                    // ✅ Update last_login timestamp
-                    $updateStmt = mysqli_prepare($conn, "UPDATE users SET last_login = NOW() WHERE user_id = ?"); // Changed 'id' to 'user_id'
-                    if ($updateStmt) {
-                        mysqli_stmt_bind_param($updateStmt, "i", $user['user_id']); // Use $user['user_id'] here
-                        mysqli_stmt_execute($updateStmt);
-                        mysqli_stmt_close($updateStmt);
-                    }
-
-                    // ✅ Store user info in session
-                    $_SESSION['user_id'] = $user['user_id']; // Use $user['user_id']
-                    $_SESSION['role'] = $user['role_name']; // Assuming you want the role name
-                    $_SESSION['first_name'] = $user['first_name'];
-
-                    // ✅ Log the login event
-                    log_event($conn, $user['user_id'], 'login', $user['first_name'] . ' logged in.');
-
-                    // ✅ Redirect based on user role
-                    switch ($_SESSION['role']) {
-                        case 'nurse':
-                            include('views/nurse/index.php');
-                            break;
-                        case 'patient':
-                            include('views/patient/index.php');
-                            break;
-                        case 'doctor':
-                            include('views/doctor/index.php');
-                            break;
-                        case 'administrator':
-                            include('views/admin/index.php');
-                            break;
-                        default:
-                            $error = "Unknown user role.";
-                    }
-                    exit;
-                } else {
-                    $error = "Invalid email or password.";
-                }
-            } else {
-                $error = "Invalid email or password.";
-            }
-            mysqli_stmt_close($stmt);
-        } else {
-            $error = "Database error: " . mysqli_error($conn);
-        }
+    if ($loginResult === true) {
+        header('Location: routes/dashboard_router.php');
+        exit;
     } else {
-        $error = "Please fill in all fields.";
+        $error = $loginResult;
     }
 }
 ?>
@@ -247,7 +176,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
 
         <div class="image-section">
-            <img src="resources\doctor.svg" alt="Doctor">
+            <img src="resources/doctor.svg" alt="Doctor">
             <div class="logo-bottom"><span>MF</span> CLINIC</div>
         </div>
     </div>

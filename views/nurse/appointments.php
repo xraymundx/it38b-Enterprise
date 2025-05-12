@@ -316,7 +316,7 @@
             </div>
         </div>
         <div class="calender">
-            <?php include 'views/components/pocket_calendar.php'; ?>
+            <?php include(__DIR__ . '/../components/pocket_calendar.php'); ?>
         </div>
         <div class="appointment-requests">
             <div class="appointment-requests-header">

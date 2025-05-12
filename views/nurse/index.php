@@ -1,13 +1,13 @@
 <?php
 
-require 'config/config.php';
-require 'config/functions.php';
 
-// Check if nurse is logged in (adjust based on your authentication)
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'nurse') {
-    header("Location: login.php"); // Redirect if not a nurse
+// Check if user is logged in and is a nurse
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'nurse') {
+    header('Location: /login.php');
     exit();
 }
+
+
 
 // Potentially other page-specific logic here before the HTML
 

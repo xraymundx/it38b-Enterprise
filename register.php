@@ -11,6 +11,7 @@ $appointmentEmail = $_GET['email'] ?? '';
 $appointmentDate = $_GET['appointment_date'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = trim($_POST['username'] ?? ''); // Get username
     $first_name = trim($_POST['first_name'] ?? '');
     $last_name = trim($_POST['last_name'] ?? '');
     $email = trim($_POST['email'] ?? '');
@@ -20,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $confirm_password = $_POST['confirm_password'] ?? '';
 
     // Validation
-    if (!$first_name || !$last_name || !$email || !$phone_number || !$user_type || !$password || !$confirm_password) {
+    if (!$username || !$first_name || !$last_name || !$email || !$phone_number || !$user_type || !$password || !$confirm_password) {
         $errors[] = "All fields are required.";
     }
 
@@ -29,34 +30,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Check for duplicate email
-    $stmt = $conn->prepare("SELECT id FROM users WHERE email = :email");
-    $stmt->execute(['email' => $email]);
-    if ($stmt->fetch()) {
+    $stmt = $conn->prepare("SELECT user_id FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $stmt->store_result();
+    if ($stmt->num_rows > 0) {
         $errors[] = "Email is already registered.";
     }
+    $stmt->close();
 
     if (empty($errors)) {
         // Hash password
         $password_hash = password_hash($password, PASSWORD_BCRYPT);
 
+        // Map user_type to role_id
+        $roleId = null;
+        switch ($user_type) {
+            case 'patient':
+                $roleId = 1; // Example role ID for patient
+                break;
+            case 'admin':
+                $roleId = 2; // Example role ID for admin
+                break;
+            case 'nurse':
+                $roleId = 3; // Example role ID for nurse
+                break;
+            case 'doctor':
+                $roleId = 4; // Example role ID for doctor
+                break;
+            default:
+                $roleId = null; // Or some default role ID
+                break;
+        }
+
         // Insert user
-        $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, phone_number, user_type, password_hash)
-                                 VALUES (:first_name, :last_name, :email, :phone_number, :user_type, :password_hash)");
-        $stmt->execute([
-            'first_name' => $first_name,
-            'last_name' => $last_name,
-            'email' => $email,
-            'phone_number' => $phone_number,
-            'user_type' => $user_type,
-            'password_hash' => $password_hash
-        ]);
+        $stmt = $conn->prepare("INSERT INTO users (username, email, first_name, last_name, phone_number, password_hash, role_id)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssssi", $username, $email, $first_name, $last_name, $phone_number, $password_hash, $roleId);
 
-        $success = "Registration successful! You can now <a href='login.php'>log in</a>.";
+        if ($stmt->execute()) {
+            $success = "Registration successful! You can now <a href='login.php'>log in</a>.";
 
-        // Optionally, you could also directly save the appointment here,
-        // now that the user is registered. You'd need to access the
-        // $appointmentDate as well.
+            // Optionally, you could also directly save the appointment here,
+            // now that the user is registered. You'd need to access the
+            // $appointmentDate as well.
+        } else {
+            $errors[] = "Registration failed. Please try again.";
+        }
+        $stmt->close();
     }
+    $conn->close();
 }
 ?>
 <!DOCTYPE html>
@@ -182,18 +205,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </style>
 </head>
 
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MF Clinic Register</title>
-    <style>
-        /* ... your register.php styles ... */
-    </style>
-</head>
-
 <body>
     <div class="container">
         <div class="register-section">
@@ -214,6 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
 
                 <form action="register.php" method="POST">
+                    <input type="text" name="username" placeholder="Username" required>
                     <div class="input-group">
                         <input type="text" name="first_name" placeholder="First Name"
                             value="<?= htmlspecialchars($appointmentFirstName) ?>" required>

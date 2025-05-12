@@ -102,14 +102,14 @@
     </header>
 
     <div class="dashboard-cards">
-        <?php include 'views/components/nurse_widget.php'; ?>
+        <?php include(__DIR__ . '/../components/nurse_widget.php'); ?>
     </div>
 
     <div class="dashboard-recent-patients">
-        <?php include 'views/components/recent_patients.php'; ?>
+        <?php include(__DIR__ . '/../components/recent_patients.php'); ?>
     </div>
 
     <div class="dashboard-calendar-container">
-        <?php include 'views/components/calendar.php'; ?>
+        <?php include(__DIR__ . '/../components/calendar.php'); ?>
     </div>
 </div>

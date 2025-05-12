@@ -1,6 +1,9 @@
 <?php
 // Include database connection
-require 'config/config.php';
+
+$configPath = realpath('../config/config.php');
+echo "Config path: $configPath\n"; // Debugging line
+require $configPath;
 
 // Fetch the 3 most recent patients, their first and last names, and descriptions
 $query = "SELECT p.patient_id, p.first_name, p.last_name, p.created_at, d.description
