@@ -297,12 +297,11 @@
     <div class="parent">
         <div class="add-patient-doctor">
             <h3>Add appointment to the schedule</h3>
-            <a href="/appointments/add" class="add-appointment-button">+ Add Appointment</a>
-
-            <a href="/slots/add" class="add-slot-button">+ Add Slot</a>
+            <a href="/it38b-Enterprise/routes/dashboard_router.php?page=schedule" class="add-appointment-button">+ Add
+                Appointment</a>
 
             <div class="doctor-image-container">
-                <img src="resources/doctor.svg" alt="Doctor Illustration">
+                <img src="/it38b-Enterprise/resources/doctor.svg" alt="Doctor Illustration">
             </div>
         </div>
         <div class="stats">
@@ -345,11 +344,17 @@
             // Function to fetch appointment requests from the database
             async function fetchAppointmentRequests() {
                 try {
-                    const response = await fetch('/api/appointments/requests');
+                    const response = await fetch('/it38b-Enterprise/api/appointments.php?status=Requested');
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                    const requests = await response.json();
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        throw new Error(data.error || 'Failed to load appointment requests');
+                    }
+
+                    const requests = data.appointments || [];
 
                     if (requests && requests.length > 0) {
                         noRequestsMessage.style.display = 'none';
@@ -357,17 +362,18 @@
                         appointmentRequestsList.innerHTML = '';
 
                         requests.forEach(request => {
+                            const appointmentDate = new Date(request.appointment_datetime);
                             const listItem = document.createElement('li');
                             listItem.classList.add('appointment-request-item');
                             listItem.innerHTML = `
                                 <div class="patient-info">
                                     <div class="patient-avatar">
-                                        <span>${request.patient_name.charAt(0).toUpperCase()}</span>
+                                        <span>${request.patient_first_name.charAt(0).toUpperCase()}</span>
                                     </div>
-                                    <span class="patient-name">${request.patient_name}</span>
+                                    <span class="patient-name">${request.patient_first_name} ${request.patient_last_name}</span>
                                 </div>
-                                <span class="appointment-date">${new Date(request.appointment_datetime).toLocaleDateString()}</span>
-                                <span class="appointment-time">${new Date(request.appointment_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                <span class="appointment-date">${appointmentDate.toLocaleDateString()}</span>
+                                <span class="appointment-time">${appointmentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 <div class="appointment-actions">
                                     <button class="accept-button" data-id="${request.appointment_id}">Accept</button>
                                     <button class="reject-button" data-id="${request.appointment_id}">Reject</button>
@@ -389,7 +395,7 @@
             // Function to handle accepting or rejecting appointment requests
             async function handleAppointmentAction(appointmentId, action) {
                 try {
-                    const response = await fetch(`/api/appointments/${appointmentId}/${action}`, {
+                    const response = await fetch(`/it38b-Enterprise/api/appointments.php?id=${appointmentId}&action=${action}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -404,7 +410,7 @@
                     const result = await response.json();
                     if (result.success) {
                         // Show success message
-                        alert(result.message);
+                        alert(result.message || `Appointment ${action}ed successfully`);
                         // Reload the data
                         await fetchAppointmentRequests();
                         await fetchAppointmentStats();
@@ -420,16 +426,17 @@
             // Function to fetch appointment statistics
             async function fetchAppointmentStats() {
                 try {
-                    const response = await fetch('/api/appointments');
+                    const response = await fetch('/it38b-Enterprise/api/appointments.php?stats=month');
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                    const stats = await response.json();
+                    const data = await response.json();
 
-                    if (stats) {
-                        totalAppointmentsSpan.textContent = stats.total_appointments || 0;
-                        pendingAppointmentsSpan.textContent = stats.pending_appointments || 0;
-                        completedAppointmentsSpan.textContent = stats.completed_appointments || 0;
+                    if (data && data.success) {
+                        const stats = data.stats || {};
+                        totalAppointmentsSpan.textContent = stats.total || 0;
+                        pendingAppointmentsSpan.textContent = stats.pending || 0;
+                        completedAppointmentsSpan.textContent = stats.completed || 0;
                     } else {
                         throw new Error('Invalid statistics data received');
                     }
@@ -454,10 +461,8 @@
             });
 
             // Initial data load
-            document.addEventListener('DOMContentLoaded', () => {
-                fetchAppointmentRequests();
-                fetchAppointmentStats();
-            });
+            fetchAppointmentRequests();
+            fetchAppointmentStats();
         });
     </script>
 </body>

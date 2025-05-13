@@ -269,6 +269,79 @@
 
         let currentDate = new Date();
         const today = new Date();
+        let selectedDate = new Date().toISOString().split('T')[0]; // Track selected date in YYYY-MM-DD format
+        let currentFilter = 'all';
+
+        // Load appointments for a specific date
+        async function loadAppointments(date) {
+            try {
+                const response = await fetch(`/it38b-Enterprise/api/appointments.php?date=${date}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch appointments');
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load appointments');
+                }
+
+                displayAppointments(data.appointments || []);
+            } catch (error) {
+                console.error('Error loading appointments:', error);
+                appointmentsBox.innerHTML = '<div class="appointment-item">Failed to load appointments</div>';
+            }
+        }
+
+        // Display appointments in the appointments box
+        function displayAppointments(appointments) {
+            appointmentsBox.innerHTML = '';
+
+            if (!appointments || appointments.length === 0) {
+                appointmentsBox.innerHTML = '<div class="appointment-item">No appointments for this date</div>';
+                return;
+            }
+
+            // Filter appointments based on selected filter
+            let filteredAppointments = appointments;
+            if (currentFilter !== 'all') {
+                const statusMap = {
+                    'today': () => {
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        return appointments.filter(a => a.appointment_datetime.includes(todayStr));
+                    },
+                    'upcoming': () => {
+                        const now = new Date();
+                        return appointments.filter(a => new Date(a.appointment_datetime) > now);
+                    },
+                    'done': () => {
+                        return appointments.filter(a => a.status === 'Completed');
+                    }
+                };
+
+                if (statusMap[currentFilter]) {
+                    filteredAppointments = statusMap[currentFilter]();
+                }
+            }
+
+            // Display the filtered appointments
+            filteredAppointments.forEach(appointment => {
+                const appointmentTime = new Date(appointment.appointment_datetime);
+                const formattedTime = appointmentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                const appointmentItem = document.createElement('div');
+                appointmentItem.classList.add('appointment-item');
+                appointmentItem.innerHTML = `${formattedTime} - ${appointment.patient_first_name} ${appointment.patient_last_name}`;
+
+                // Make appointment clickable to view details
+                appointmentItem.style.cursor = 'pointer';
+                appointmentItem.addEventListener('click', () => {
+                    window.location.href = `/it38b-Enterprise/views/nurse/appointment_view.php?id=${appointment.appointment_id}`;
+                });
+
+                appointmentsBox.appendChild(appointmentItem);
+            });
+        }
 
         function generateCalendar(date) {
             const year = date.getFullYear();
@@ -298,7 +371,8 @@
                         row.appendChild(cell);
                     } else {
                         cell.textContent = dayCounter;
-                        cell.dataset.date = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayCounter).padStart(2, '0')}`;
+                        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayCounter).padStart(2, '0')}`;
+                        cell.dataset.date = dateStr;
                         cell.classList.add('calendar-day');
 
                         if (
@@ -306,14 +380,26 @@
                             month === today.getMonth() &&
                             dayCounter === today.getDate()
                         ) {
-                            cell.classList.add('today', 'selected');
+                            cell.classList.add('today');
+
+                            // Select today initially if no date is selected
+                            if (!document.querySelector('.calendar-day.selected')) {
+                                cell.classList.add('selected');
+                                selectedDate = dateStr;
+                                loadAppointments(dateStr);
+                            }
+                        }
+
+                        // Mark the selected date if it's in the current month view
+                        if (dateStr === selectedDate) {
+                            cell.classList.add('selected');
                         }
 
                         cell.addEventListener('click', function () {
                             document.querySelectorAll('.calendar-day.selected').forEach((el) => el.classList.remove('selected'));
                             this.classList.add('selected');
-                            console.log('Selected date:', this.dataset.date);
-                            // You can add logic here to fetch and display appointments for the selected date
+                            selectedDate = this.dataset.date;
+                            loadAppointments(selectedDate);
                         });
 
                         row.appendChild(cell);
@@ -335,8 +421,11 @@
         const goTodayBtn = document.querySelector('.go-today');
         goTodayBtn.addEventListener('click', () => {
             currentDate = new Date(today.getTime());
+            selectedDate = currentDate.toISOString().split('T')[0];
             generateCalendar(currentDate);
+            loadAppointments(selectedDate);
         });
+
         prevMonthBtn.addEventListener('click', () => navigateMonth(-1));
         nextMonthBtn.addEventListener('click', () => navigateMonth(1));
 
@@ -344,17 +433,19 @@
             button.addEventListener('click', () => {
                 filterButtons.forEach((btn) => btn.classList.remove('active'));
                 button.classList.add('active');
-                console.log('Filter:', button.textContent);
-                // You can add logic here to filter the displayed appointments
+                currentFilter = button.textContent.toLowerCase().trim();
+                loadAppointments(selectedDate);
             });
         });
 
         viewAllAppointmentsButton.addEventListener('click', () => {
             // Redirect to the appointments list page
-            window.location.href = 'index.php?page=appointments&status=all';
+            window.location.href = '/it38b-Enterprise/routes/dashboard_router.php?page=appointments&status=all';
         });
 
+        // Initialize calendar and load today's appointments
         generateCalendar(currentDate);
+        loadAppointments(selectedDate);
     </script>
 </body>
 

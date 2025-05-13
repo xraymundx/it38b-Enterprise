@@ -297,12 +297,23 @@ $stats = mysqli_fetch_assoc($statsResult);
         // Function to load appointments for a date
         async function loadAppointments(date) {
             try {
-                const response = await fetch(`../api/appointments.php?date=${date}`);
+                const response = await fetch(`/it38b-Enterprise/api/appointments.php?date=${date}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch appointments');
                 }
+
                 const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load appointments');
+                }
+
                 displayAppointments(data.appointments || []);
+
+                // Update total count if needed
+                if (data.total) {
+                    totalAppointmentsSpan.textContent = data.total;
+                }
             } catch (error) {
                 console.error('Error loading appointments:', error);
                 showError('Failed to load appointments');
@@ -312,20 +323,52 @@ $stats = mysqli_fetch_assoc($statsResult);
         // Function to display appointments
         function displayAppointments(appointments) {
             appointmentsBox.innerHTML = '';
+
             if (appointments && appointments.length > 0) {
                 appointments.forEach(appointment => {
-                    if (currentFilter === 'all' || appointment.status === currentFilter) {
+                    // Filter based on status
+                    let showAppointment = false;
+
+                    switch (currentFilter) {
+                        case 'all':
+                            showAppointment = true;
+                            break;
+                        case 'pending':
+                            showAppointment = appointment.status === 'Requested';
+                            break;
+                        case 'confirmed':
+                            showAppointment = appointment.status === 'Scheduled';
+                            break;
+                        case 'completed':
+                            showAppointment = appointment.status === 'Completed';
+                            break;
+                    }
+
+                    if (showAppointment) {
+                        const appointmentTime = new Date(appointment.appointment_datetime);
+                        const formattedTime = appointmentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
                         const appointmentItem = document.createElement('div');
                         appointmentItem.classList.add('appointment-item');
+
+                        // Add status-specific class for styling
+                        appointmentItem.classList.add(appointment.status.toLowerCase().replace(' ', '-'));
+
                         appointmentItem.innerHTML = `
-                            <div class="appointment-time">${formatTime(appointment.appointment_datetime)}</div>
-                            <div class="appointment-details">
-                                <div class="patient-name">${appointment.patient_first_name} ${appointment.patient_last_name}</div>
-                                <div class="doctor-name">Dr. ${appointment.doctor_first_name} ${appointment.doctor_last_name}</div>
-                                <div class="reason">${appointment.reason_for_visit}</div>
+                            <div>
+                                <strong>${formattedTime}</strong> - 
+                                ${appointment.patient_first_name} ${appointment.patient_last_name}
+                                <span class="status-badge">${appointment.status}</span>
                             </div>
-                            <div class="appointment-status ${appointment.status}">${appointment.status}</div>
+                            <div>Doctor: Dr. ${appointment.doctor_first_name} ${appointment.doctor_last_name}</div>
                         `;
+
+                        // Make clickable to view details
+                        appointmentItem.style.cursor = 'pointer';
+                        appointmentItem.addEventListener('click', () => {
+                            window.location.href = `/it38b-Enterprise/views/nurse/appointment_view.php?id=${appointment.appointment_id}`;
+                        });
+
                         appointmentsBox.appendChild(appointmentItem);
                     }
                 });
