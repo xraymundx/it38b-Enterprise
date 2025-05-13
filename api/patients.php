@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     // Get all patients with their user information
     $query = "SELECT p.patient_id, u.first_name, u.last_name, u.email, u.phone_number, p.date_of_birth, p.gender
     FROM patients p
-    JOIN users u ON p.user_id_fk = u.user_id
+    JOIN users u ON p.user_id = u.user_id
     ORDER BY u.last_name, u.first_name";
     $result = mysqli_query($conn, $query);
 

@@ -1,7 +1,7 @@
 <?php
 // Include the configuration file
+require '../config/config.php';
 require_once __DIR__ . '/../../config/config.php';
-
 // Check if user is logged in and is a nurse
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'nurse') {
     header('Location: /login.php');
@@ -155,6 +155,37 @@ if ($selectedDate) {
         <div class="bg-white rounded-lg shadow-md p-6 mb-8" x-show="selectedDoctor">
             <h2 class="text-2xl font-bold mb-4">Doctor Availability</h2>
 
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Doctor's Schedule</h3>
+                    <div class="flex gap-2">
+                        <button @click="markDoctorUnavailable()"
+                            class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm transition duration-200">
+                            <i class="fas fa-calendar-times mr-1"></i> Mark Unavailable for This Day
+                        </button>
+                        <button @click="resetScheduleToDefault()" x-show="isExceptionDay"
+                            class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md text-sm transition duration-200">
+                            <i class="fas fa-undo mr-1"></i> Reset to Default Schedule
+                        </button>
+                    </div>
+                </div>
+
+                <div x-show="dayNotes" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd"
+                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-yellow-700" x-text="dayNotes"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="mb-8">
                 <h3 class="text-lg font-semibold mb-4">Available Time Slots</h3>
                 <div class="grid grid-cols-4 gap-4">
@@ -175,7 +206,12 @@ if ($selectedDate) {
             </div>
 
             <div class="mb-6">
-                <h3 class="text-lg font-semibold mb-4">Selected Time Slots</h3>
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-lg font-semibold">Selected Time Slots</h3>
+                    <span class="text-sm text-gray-500" x-show="selectedSlots.length > 0">
+                        Click a slot to remove it
+                    </span>
+                </div>
                 <div class="flex flex-wrap gap-2">
                     <template x-for="slot in selectedSlots" :key="slot">
                         <div class="bg-blue-100 text-blue-800 px-4 py-2 rounded-full flex items-center gap-2">
@@ -193,6 +229,14 @@ if ($selectedDate) {
                         No time slots selected
                     </div>
                 </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="schedule-notes" class="block text-sm font-medium text-gray-700 mb-1">Notes
+                    (Optional)</label>
+                <textarea id="schedule-notes" x-model="scheduleNotes"
+                    class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Add notes about this schedule (e.g., 'Doctor attending conference')"></textarea>
             </div>
 
             <div class="flex gap-4">
@@ -419,6 +463,9 @@ if ($selectedDate) {
                 showAddModal: false,
                 patients: [],
                 availableTimeSlots: [],
+                scheduleNotes: '',
+                dayNotes: '',
+                isExceptionDay: false,
                 newAppointment: {
                     doctor_id: '',
                     patient_id: '',
@@ -569,6 +616,9 @@ if ($selectedDate) {
                 selectDoctor(doctorId) {
                     this.selectedDoctor = doctorId;
                     this.selectedSlots = [];
+                    this.scheduleNotes = '';
+                    this.dayNotes = '';
+                    this.isExceptionDay = false;
                     this.loadDoctorAvailability(doctorId);
                 },
 
@@ -592,7 +642,18 @@ if ($selectedDate) {
                         const response = await fetch(`/it38b-Enterprise/api/doctor/availability.php?doctor_id=${doctorId}&date=${this.currentDate}`);
                         if (response.ok) {
                             const data = await response.json();
-                            this.selectedSlots = data.timeSlots || [];
+                            if (data.success) {
+                                this.selectedSlots = data.timeSlots || [];
+                                this.isExceptionDay = data.is_exception || false;
+                                this.dayNotes = data.notes || '';
+
+                                if (!data.available) {
+                                    this.selectedSlots = [];
+                                    if (!this.dayNotes && !data.is_exception) {
+                                        this.dayNotes = "Doctor is not scheduled to work on this day.";
+                                    }
+                                }
+                            }
                         }
                     } catch (error) {
                         console.error('Error loading doctor availability:', error);
@@ -617,7 +678,67 @@ if ($selectedDate) {
                 },
 
                 clearAllSlots() {
-                    this.selectedSlots = [];
+                    Swal.fire({
+                        title: 'Clear All Time Slots?',
+                        text: "This will remove all selected time slots. Continue?",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Yes, clear all'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.selectedSlots = [];
+                        }
+                    });
+                },
+
+                markDoctorUnavailable() {
+                    Swal.fire({
+                        title: 'Mark Doctor Unavailable?',
+                        text: "This will mark the doctor as unavailable for the entire day. Any existing appointments will still appear but no new ones can be scheduled. Continue?",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Yes, mark unavailable'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            this.selectedSlots = [];
+                            this.saveTimeSlots();
+                        }
+                    });
+                },
+
+                resetScheduleToDefault() {
+                    Swal.fire({
+                        title: 'Reset to Default Schedule?',
+                        text: "This will remove the exception for this day and revert to the doctor's regular schedule. Continue?",
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Yes, reset schedule'
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            try {
+                                const response = await fetch(`/it38b-Enterprise/api/doctor/availability.php?doctor_id=${this.selectedDoctor}&date=${this.currentDate}`, {
+                                    method: 'DELETE'
+                                });
+
+                                const data = await response.json();
+                                if (data.success) {
+                                    Swal.fire('Success', data.message, 'success');
+                                    this.loadDoctorAvailability(this.selectedDoctor);
+                                } else {
+                                    throw new Error(data.error || 'Failed to reset schedule');
+                                }
+                            } catch (error) {
+                                console.error('Error resetting schedule:', error);
+                                Swal.fire('Error', error.message, 'error');
+                            }
+                        }
+                    });
                 },
 
                 async saveTimeSlots() {
@@ -635,13 +756,16 @@ if ($selectedDate) {
                             body: JSON.stringify({
                                 doctor_id: this.selectedDoctor,
                                 date: this.currentDate,
-                                timeSlots: this.selectedSlots
+                                timeSlots: this.selectedSlots,
+                                notes: this.scheduleNotes
                             })
                         });
 
                         const result = await response.json();
                         if (result.success) {
                             Swal.fire('Success', 'Doctor availability saved successfully!', 'success');
+                            this.isExceptionDay = true;
+                            this.dayNotes = this.scheduleNotes;
                         } else {
                             throw new Error(result.error || 'Failed to save doctor availability');
                         }
