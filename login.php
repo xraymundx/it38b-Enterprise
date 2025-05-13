@@ -1,19 +1,62 @@
 <?php
 session_start();
-require '../config/config.php';
-require_once 'controllers/AuthController.php';
+require_once('config/config.php');
 
 $error = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $auth = new AuthController(getDB());
-    $loginResult = $auth->attempt($_POST['email'] ?? '', $_POST['password'] ?? '');
+    $email = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
 
-    if ($loginResult === true) {
-        header('Location: routes/dashboard_router.php');
-        exit;
+    // Validate inputs
+    if (empty($email) || empty($password)) {
+        $error = "Please enter both email and password.";
     } else {
-        $error = $loginResult;
+        // Use MySQLi for database connection
+        global $conn;
+
+        // Prepare statement to prevent SQL injection
+        $stmt = $conn->prepare("SELECT * FROM users u LEFT JOIN roles r ON u.role_id = r.role_id WHERE u.email = ? LIMIT 1");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 1) {
+            $user = $result->fetch_assoc();
+
+            // Verify password
+            if (password_verify($password, $user['password_hash'])) {
+                // Set session variables
+                $_SESSION['user_id'] = $user['user_id'];
+                $_SESSION['role'] = $user['role_name'];
+                $_SESSION['first_name'] = $user['first_name'];
+                $_SESSION['last_name'] = $user['last_name'];
+
+                // Update last login time
+                $updateStmt = $conn->prepare("UPDATE users SET last_login = NOW() WHERE user_id = ?");
+                $updateStmt->bind_param("i", $user['user_id']);
+                $updateStmt->execute();
+                $updateStmt->close();
+
+                // Log the login event
+                $eventType = 'login';
+                $description = "{$user['first_name']} logged in.";
+                $logStmt = $conn->prepare("INSERT INTO logs (user_id, event_type, description, timestamp) VALUES (?, ?, ?, NOW())");
+                $logStmt->bind_param("iss", $user['user_id'], $eventType, $description);
+                $logStmt->execute();
+                $logStmt->close();
+
+                // Redirect to dashboard
+                header('Location: routes/dashboard_router.php');
+                exit;
+            } else {
+                $error = "Invalid credentials.";
+            }
+        } else {
+            $error = "Invalid credentials.";
+        }
+
+        $stmt->close();
     }
 }
 ?>

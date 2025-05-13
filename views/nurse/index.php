@@ -1,5 +1,8 @@
 <?php
-
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Check if user is logged in and is a nurse
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'nurse') {
@@ -7,7 +10,20 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
     exit();
 }
 
+// Get user information
+require_once __DIR__ . '/../../config/config.php';
+$user_id = $_SESSION['user_id'];
+$query = "SELECT u.*, n.nurse_id FROM users u 
+          LEFT JOIN nurses n ON u.user_id = n.user_id 
+          WHERE u.user_id = ?";
+$stmt = mysqli_prepare($conn, $query);
+mysqli_stmt_bind_param($stmt, "i", $user_id);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+$user = mysqli_fetch_assoc($result);
 
+// Default profile image if none is set
+$profile_image = !empty($user['profile_image']) ? $user['profile_image'] : 'https://via.placeholder.com/30';
 
 // Potentially other page-specific logic here before the HTML
 
@@ -19,6 +35,8 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nurse Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
@@ -478,21 +496,22 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
             <a href="?page=billing_records" class="sidenav-item">
                 <span class="material-symbols-outlined">receipt</span> Billing Records
             </a>
+
         </div>
         <div class="sidenav-footer">
             <div class="user-info">
-                <img src="https://via.placeholder.com/30" alt="User Avatar">
+                <img src="<?php echo htmlspecialchars($profile_image); ?>" alt="User Avatar">
                 <div class="user-details">
-                    <strong>John</strong>
+                    <strong><?php echo htmlspecialchars($user['first_name']); ?></strong>
                     <small>Nurse</small>
                 </div>
             </div>
             <div class="sidenav-footer-options">
-                <a href="#">
+                <a href="?page=settings">
                     <span class="material-symbols-outlined">settings</span>
                     Settings
                 </a>
-                <a href="logout.php">
+                <a href="/it38b-Enterprise/functions/logout.php">
                     <span class="material-symbols-outlined">logout</span>
                     Log Out
                 </a>
@@ -532,6 +551,9 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
                             break;
                         case 'billing_records':
                             include('billing_records.php');
+                            break;
+                        case 'settings':
+                            include('settings.php');
                             break;
                         default:
                             echo "Page not found.";

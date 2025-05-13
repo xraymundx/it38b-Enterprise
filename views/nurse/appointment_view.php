@@ -132,37 +132,138 @@ $formattedTime = $appointmentDateTime->format('g:i A');
                 </div>
             </div>
 
-            <!-- Medical Records & Billing Section (Placeholder for Future Implementation) -->
-            <?php if ($appointment['status'] === 'Completed'): ?>
+            <!-- Medical Records & Billing Section -->
+            <?php if ($appointment['status'] === 'Scheduled' || $appointment['status'] === 'Completed'): ?>
                 <div class="mt-8 bg-gray-50 p-6 rounded-lg">
                     <h2 class="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">Medical & Billing Records</h2>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div>
-                            <h3 class="text-lg font-medium text-gray-700 mb-3">Medical Records</h3>
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="text-lg font-medium text-gray-700">Medical Records</h3>
+                                <?php if ($appointment['status'] === 'Scheduled' || $appointment['status'] === 'Completed'): ?>
+                                    <a href="/it38b-Enterprise/views/nurse/medical_record_form.php?appointment_id=<?php echo $appointmentId; ?>"
+                                        class="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                        <i class="fas fa-plus mr-1"></i> Add Record
+                                    </a>
+                                <?php endif; ?>
+                            </div>
+
                             <?php if (empty($appointment['medical_records'])): ?>
                                 <p class="text-gray-500 italic">No medical records available.</p>
-                                <button
-                                    class="mt-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled>
-                                    <i class="fas fa-file-medical mr-2"></i> Attach Medical Record
-                                </button>
+                                <p class="text-gray-500">Debug: <?php echo count($appointment['medical_records']); ?> records
+                                    found.</p>
                             <?php else: ?>
-                                <!-- Display medical records here in the future -->
+                                <p class="text-gray-500">Debug: <?php echo count($appointment['medical_records']); ?> records
+                                    found.</p>
+                                <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                                    <table class="min-w-full divide-y divide-gray-300">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col"
+                                                    class="py-3 pl-4 pr-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                    Date</th>
+                                                <th scope="col"
+                                                    class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                    Diagnosis</th>
+                                                <th scope="col"
+                                                    class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                    Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200 bg-white">
+                                            <?php foreach ($appointment['medical_records'] as $record): ?>
+                                                <tr>
+                                                    <td class="whitespace-nowrap py-2 pl-4 pr-3 text-sm text-gray-500">
+                                                        <?php echo htmlspecialchars($record['formatted_date']); ?>
+                                                    </td>
+                                                    <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                                                        <?php echo htmlspecialchars(substr($record['diagnosis'], 0, 30) . (strlen($record['diagnosis']) > 30 ? '...' : '')); ?>
+                                                    </td>
+                                                    <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                                                        <a href="/it38b-Enterprise/views/nurse/view_medical_record.php?id=<?php echo $record['record_id']; ?>&appointment_id=<?php echo $appointmentId; ?>"
+                                                            class="text-blue-600 hover:text-blue-800">
+                                                            <i class="fas fa-eye"></i> View
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
                             <?php endif; ?>
                         </div>
 
                         <div>
-                            <h3 class="text-lg font-medium text-gray-700 mb-3">Billing Records</h3>
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="text-lg font-medium text-gray-700">Billing Records</h3>
+                                <a href="/it38b-Enterprise/views/nurse/billing_record_form.php?appointment_id=<?php echo $appointmentId; ?>"
+                                    class="px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm">
+                                    <i class="fas fa-plus mr-1"></i> Add Bill
+                                </a>
+                            </div>
+
                             <?php if (empty($appointment['billing_records'])): ?>
                                 <p class="text-gray-500 italic">No billing records available.</p>
-                                <button
-                                    class="mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled>
-                                    <i class="fas fa-file-invoice-dollar mr-2"></i> Attach Billing Record
-                                </button>
                             <?php else: ?>
-                                <!-- Display billing records here in the future -->
+                                <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                                    <table class="min-w-full divide-y divide-gray-300">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th scope="col"
+                                                    class="py-3 pl-4 pr-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                    Invoice</th>
+                                                <th scope="col"
+                                                    class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                    Amount</th>
+                                                <th scope="col"
+                                                    class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                    Status</th>
+                                                <th scope="col"
+                                                    class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                                                    Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200 bg-white">
+                                            <?php foreach ($appointment['billing_records'] as $bill): ?>
+                                                <tr>
+                                                    <td class="whitespace-nowrap py-2 pl-4 pr-3 text-sm text-gray-500">
+                                                        <?php echo !empty($bill['invoice_number']) ? htmlspecialchars($bill['invoice_number']) : 'N/A'; ?>
+                                                    </td>
+                                                    <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                                                        $<?php echo htmlspecialchars(number_format($bill['amount'], 2)); ?>
+                                                    </td>
+                                                    <td class="whitespace-nowrap px-3 py-2 text-sm">
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                            <?php
+                                                            switch ($bill['payment_status']) {
+                                                                case 'Paid':
+                                                                    echo 'bg-green-100 text-green-800';
+                                                                    break;
+                                                                case 'Partial':
+                                                                    echo 'bg-yellow-100 text-yellow-800';
+                                                                    break;
+                                                                case 'Cancelled':
+                                                                    echo 'bg-red-100 text-red-800';
+                                                                    break;
+                                                                default:
+                                                                    echo 'bg-gray-100 text-gray-800';
+                                                            }
+                                                            ?>">
+                                                            <?php echo htmlspecialchars($bill['payment_status']); ?>
+                                                        </span>
+                                                    </td>
+                                                    <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+                                                        <a href="/it38b-Enterprise/views/nurse/view_billing_record.php?id=<?php echo $bill['bill_id']; ?>&appointment_id=<?php echo $appointmentId; ?>"
+                                                            class="text-blue-600 hover:text-blue-800">
+                                                            <i class="fas fa-eye"></i> View
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>

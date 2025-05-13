@@ -70,66 +70,77 @@ function get_appointment_by_id($appointment_id)
 
 /**
  * Get all medical records related to an appointment
- * This is a placeholder for future implementation
  * 
  * @param int $appointment_id The appointment ID
- * @return array Empty array for now, will contain medical records in the future
+ * @return array Array of medical records
  */
 function get_appointment_medical_records($appointment_id)
 {
     global $conn;
 
-    // Placeholder for future implementation
-    // In the future, this will query the medicalrecords table with appointment_id
-
     $records = [];
 
-    // Example of future implementation:
-    /*
-    $query = "SELECT * FROM medicalrecords WHERE appointment_id = ?";
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "i", $appointment_id);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    
-    while ($row = mysqli_fetch_assoc($result)) {
-        $records[] = $row;
-    }
-    */
+    try {
+        // Simple query that focuses only on appointment_id
+        $query = "SELECT m.*, 
+                      DATE_FORMAT(m.record_datetime, '%M %d, %Y') AS formatted_date,
+                      DATE_FORMAT(m.record_datetime, '%h:%i %p') AS formatted_time
+                  FROM medicalrecords m
+                  WHERE m.appointment_id = ?
+                  ORDER BY m.record_datetime DESC";
 
-    return $records;
+        $stmt = mysqli_prepare($conn, $query);
+        mysqli_stmt_bind_param($stmt, "i", $appointment_id);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+
+        while ($row = mysqli_fetch_assoc($result)) {
+            $records[] = $row;
+        }
+
+        return $records;
+
+    } catch (Exception $e) {
+        error_log("Error fetching medical records: " . $e->getMessage());
+        return [];
+    }
 }
 
 /**
  * Get all billing records related to an appointment
- * This is a placeholder for future implementation
  * 
  * @param int $appointment_id The appointment ID
- * @return array Empty array for now, will contain billing records in the future
+ * @return array Array of billing records
  */
 function get_appointment_billing_records($appointment_id)
 {
     global $conn;
 
-    // Placeholder for future implementation
-    // In the future, this will query the billingrecords table with appointment_id
-
     $records = [];
 
-    // Example of future implementation:
-    /*
-    $query = "SELECT * FROM billingrecords WHERE appointment_id = ?";
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "i", $appointment_id);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    
-    while ($row = mysqli_fetch_assoc($result)) {
-        $records[] = $row;
-    }
-    */
+    try {
+        // Simple query that focuses only on appointment_id
+        $query = "SELECT b.*, 
+                      DATE_FORMAT(b.billing_date, '%M %d, %Y') AS formatted_date
+                  FROM billingrecords b
+                  WHERE b.appointment_id = ?
+                  ORDER BY b.billing_date DESC";
 
-    return $records;
+        $stmt = mysqli_prepare($conn, $query);
+        mysqli_stmt_bind_param($stmt, "i", $appointment_id);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+
+        while ($row = mysqli_fetch_assoc($result)) {
+            $records[] = $row;
+        }
+
+        return $records;
+
+    } catch (Exception $e) {
+        error_log("Error fetching billing records: " . $e->getMessage());
+        return [];
+    }
 }
 
 /**

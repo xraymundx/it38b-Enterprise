@@ -396,7 +396,7 @@
             async function handleAppointmentAction(appointmentId, action) {
                 try {
                     const response = await fetch(`/it38b-Enterprise/api/appointments.php?id=${appointmentId}&action=${action}`, {
-                        method: 'POST',
+                        method: 'GET',
                         headers: {
                             'Content-Type': 'application/json',
                         }
@@ -426,7 +426,8 @@
             // Function to fetch appointment statistics
             async function fetchAppointmentStats() {
                 try {
-                    const response = await fetch('/it38b-Enterprise/api/appointments.php?stats=month');
+                    // Use the local proxy with absolute path
+                    const response = await fetch('/it38b-Enterprise/views/nurse/appointment_stats_proxy.php');
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }

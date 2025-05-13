@@ -1,3 +1,29 @@
+<?php
+// Include necessary files and establish database connection
+require_once __DIR__ . '/../../config/config.php';
+
+// Fetch actual data from the database
+global $conn;
+
+// Get total clinic earnings from billing records
+$earningsQuery = "SELECT SUM(amount) as total_earnings FROM billingrecords WHERE payment_status = 'Paid'";
+$earningsResult = mysqli_query($conn, $earningsQuery);
+$earningsData = mysqli_fetch_assoc($earningsResult);
+$totalEarnings = $earningsData['total_earnings'] ? number_format($earningsData['total_earnings'], 2) : '0.00';
+
+// Get total patients count
+$patientsQuery = "SELECT COUNT(*) as total_patients FROM patients";
+$patientsResult = mysqli_query($conn, $patientsQuery);
+$patientsData = mysqli_fetch_assoc($patientsResult);
+$totalPatients = $patientsData['total_patients'];
+
+// Get total appointments count
+$appointmentsQuery = "SELECT COUNT(*) as total_appointments FROM appointments";
+$appointmentsResult = mysqli_query($conn, $appointmentsQuery);
+$appointmentsData = mysqli_fetch_assoc($appointmentsResult);
+$totalAppointments = $appointmentsData['total_appointments'];
+?>
+
 <style>
     .dashboard-cards-container {
         display: flex;
@@ -85,7 +111,7 @@
         </div>
         <div class="dashboard-card-info">
             <div class="dashboard-card-title">Clinic Earnings</div>
-            <div class="dashboard-card-value">100 PHP</div>
+            <div class="dashboard-card-value"><?php echo $totalEarnings; ?> PHP</div>
         </div>
     </div>
 
@@ -94,8 +120,8 @@
             <span class="material-symbols-outlined">person</span>
         </div>
         <div class="dashboard-card-info">
-            <div class="dashboard-card-title">Total Patient</div>
-            <div class="dashboard-card-value">22</div>
+            <div class="dashboard-card-title">Total Patients</div>
+            <div class="dashboard-card-value"><?php echo $totalPatients; ?></div>
         </div>
     </div>
 
@@ -105,7 +131,7 @@
         </div>
         <div class="dashboard-card-info">
             <div class="dashboard-card-title">Appointments</div>
-            <div class="dashboard-card-value">50</div>
+            <div class="dashboard-card-value"><?php echo $totalAppointments; ?></div>
         </div>
     </div>
 </div>

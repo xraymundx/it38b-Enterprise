@@ -165,7 +165,6 @@ function update_appointment($data)
 
 /**
  * Add medical record to an appointment
- * This is a placeholder for future implementation
  * 
  * @param array $data Medical record data
  * @return array Result with success status and messages
@@ -174,19 +173,12 @@ function add_medical_record($data)
 {
     global $conn;
 
-    // This is a placeholder for future implementation
-    // Will validate data and insert into the medicalrecords table
-
-    return [
-        'success' => false,
-        'error' => 'Medical record functionality is not yet implemented'
-    ];
-
-    /* Example of future implementation:
-    
     try {
+        // Start transaction
+        mysqli_begin_transaction($conn);
+
         // Validate required fields
-        $required_fields = ['appointment_id', 'doctor_id', 'diagnosis', 'treatment'];
+        $required_fields = ['appointment_id', 'patient_id', 'doctor_id', 'diagnosis', 'treatment'];
         foreach ($required_fields as $field) {
             if (!isset($data[$field]) || empty($data[$field])) {
                 return [
@@ -195,68 +187,82 @@ function add_medical_record($data)
                 ];
             }
         }
-        
+
         $appointment_id = (int) $data['appointment_id'];
         $patient_id = (int) $data['patient_id'];
         $doctor_id = (int) $data['doctor_id'];
         $diagnosis = $data['diagnosis'];
         $treatment = $data['treatment'];
         $notes = isset($data['notes']) ? $data['notes'] : '';
-        
-        // First, check if the appointment exists and is completed
+        $prescribed_medications = isset($data['prescribed_medications']) ? $data['prescribed_medications'] : '';
+        $test_results = isset($data['test_results']) ? $data['test_results'] : '';
+
+        // First, check if the appointment exists
         $checkQuery = "SELECT status FROM appointments WHERE appointment_id = ?";
         $checkStmt = mysqli_prepare($conn, $checkQuery);
         mysqli_stmt_bind_param($checkStmt, "i", $appointment_id);
         mysqli_stmt_execute($checkStmt);
         $result = mysqli_stmt_get_result($checkStmt);
-        
+
         if (mysqli_num_rows($result) === 0) {
             return [
                 'success' => false,
                 'error' => "Appointment not found"
             ];
         }
-        
-        $appointment = mysqli_fetch_assoc($result);
-        if ($appointment['status'] !== 'Completed') {
-            return [
-                'success' => false,
-                'error' => "Cannot add medical record to an appointment that is not completed"
-            ];
-        }
-        
+
         // Insert the medical record
+        $current_date = date('Y-m-d H:i:s');
         $query = "INSERT INTO medicalrecords 
-                 (appointment_id, patient_id, doctor_id, diagnosis, treatment, notes) 
-                 VALUES (?, ?, ?, ?, ?, ?)";
-        
+                 (appointment_id, patient_id, doctor_id, diagnosis, treatment, notes, prescribed_medications, test_results, record_datetime) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
         $stmt = mysqli_prepare($conn, $query);
-        mysqli_stmt_bind_param($stmt, "iiisss", $appointment_id, $patient_id, $doctor_id, $diagnosis, $treatment, $notes);
-        
+        mysqli_stmt_bind_param($stmt, "iiissssss", $appointment_id, $patient_id, $doctor_id, $diagnosis, $treatment, $notes, $prescribed_medications, $test_results, $current_date);
+
         if (!mysqli_stmt_execute($stmt)) {
-            throw new Exception("Failed to create medical record: " . mysqli_error($conn));
+            $error = mysqli_error($conn);
+            error_log("Error adding medical record: " . $error);
+            throw new Exception("Failed to create medical record: " . $error);
         }
-        
+
         $record_id = mysqli_insert_id($conn);
-        
+        error_log("Medical record added successfully. ID: " . $record_id . ", Appointment ID: " . $appointment_id);
+
+        // If appointment status is not Completed, update it
+        $appointmentStatus = mysqli_fetch_assoc($result)['status'];
+        if ($appointmentStatus !== 'Completed') {
+            $updateQuery = "UPDATE appointments SET status = 'Completed' WHERE appointment_id = ?";
+            $updateStmt = mysqli_prepare($conn, $updateQuery);
+            mysqli_stmt_bind_param($updateStmt, "i", $appointment_id);
+
+            if (!mysqli_stmt_execute($updateStmt)) {
+                throw new Exception("Failed to update appointment status: " . mysqli_error($conn));
+            }
+        }
+
+        // Commit transaction
+        mysqli_commit($conn);
+
         return [
             'success' => true,
             'message' => 'Medical record added successfully',
             'record_id' => $record_id
         ];
-        
+
     } catch (Exception $e) {
+        // Rollback transaction on error
+        mysqli_rollback($conn);
+
         return [
             'success' => false,
             'error' => $e->getMessage()
         ];
     }
-    */
 }
 
 /**
  * Add billing record to an appointment
- * This is a placeholder for future implementation
  * 
  * @param array $data Billing record data
  * @return array Result with success status and messages
@@ -265,19 +271,12 @@ function add_billing_record($data)
 {
     global $conn;
 
-    // This is a placeholder for future implementation
-    // Will validate data and insert into the billingrecords table
-
-    return [
-        'success' => false,
-        'error' => 'Billing record functionality is not yet implemented'
-    ];
-
-    /* Example of future implementation:
-    
     try {
+        // Start transaction
+        mysqli_begin_transaction($conn);
+
         // Validate required fields
-        $required_fields = ['appointment_id', 'patient_id', 'amount', 'description'];
+        $required_fields = ['appointment_id', 'patient_id', 'description', 'amount'];
         foreach ($required_fields as $field) {
             if (!isset($data[$field]) || empty($data[$field])) {
                 return [
@@ -286,51 +285,62 @@ function add_billing_record($data)
                 ];
             }
         }
-        
+
         $appointment_id = (int) $data['appointment_id'];
         $patient_id = (int) $data['patient_id'];
-        $amount = (float) $data['amount'];
         $description = $data['description'];
+        $amount = (float) $data['amount'];
         $payment_status = isset($data['payment_status']) ? $data['payment_status'] : 'Pending';
-        
+        $payment_method = isset($data['payment_method']) ? $data['payment_method'] : null;
+        $invoice_number = isset($data['invoice_number']) ? $data['invoice_number'] : null;
+        $notes = isset($data['notes']) ? $data['notes'] : null;
+        $record_id = isset($data['record_id']) ? (int) $data['record_id'] : null;
+
         // First, check if the appointment exists
-        $checkQuery = "SELECT * FROM appointments WHERE appointment_id = ?";
+        $checkQuery = "SELECT appointment_id FROM appointments WHERE appointment_id = ?";
         $checkStmt = mysqli_prepare($conn, $checkQuery);
         mysqli_stmt_bind_param($checkStmt, "i", $appointment_id);
         mysqli_stmt_execute($checkStmt);
-        
-        if (mysqli_num_rows(mysqli_stmt_get_result($checkStmt)) === 0) {
+        $result = mysqli_stmt_get_result($checkStmt);
+
+        if (mysqli_num_rows($result) === 0) {
             return [
                 'success' => false,
                 'error' => "Appointment not found"
             ];
         }
-        
+
         // Insert the billing record
+        $current_date = date('Y-m-d H:i:s');
         $query = "INSERT INTO billingrecords 
-                 (appointment_id, patient_id, amount, description, payment_status) 
-                 VALUES (?, ?, ?, ?, ?)";
-        
+                 (appointment_id, patient_id, record_id, description, amount, payment_status, payment_method, invoice_number, notes, billing_date) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
         $stmt = mysqli_prepare($conn, $query);
-        mysqli_stmt_bind_param($stmt, "iidss", $appointment_id, $patient_id, $amount, $description, $payment_status);
-        
+        mysqli_stmt_bind_param($stmt, "iiisdsssss", $appointment_id, $patient_id, $record_id, $description, $amount, $payment_status, $payment_method, $invoice_number, $notes, $current_date);
+
         if (!mysqli_stmt_execute($stmt)) {
             throw new Exception("Failed to create billing record: " . mysqli_error($conn));
         }
-        
-        $bill_id = mysqli_insert_id($conn);
-        
+
+        $billing_id = mysqli_insert_id($conn);
+
+        // Commit transaction
+        mysqli_commit($conn);
+
         return [
             'success' => true,
             'message' => 'Billing record added successfully',
-            'bill_id' => $bill_id
+            'billing_id' => $billing_id
         ];
-        
+
     } catch (Exception $e) {
+        // Rollback transaction on error
+        mysqli_rollback($conn);
+
         return [
             'success' => false,
             'error' => $e->getMessage()
         ];
     }
-    */
 }

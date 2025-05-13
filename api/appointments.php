@@ -19,6 +19,139 @@ if ($_SESSION['role'] !== 'nurse') {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $date = isset($_GET['date']) ? $_GET['date'] : null;
     $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
+    $status = isset($_GET['status']) ? $_GET['status'] : null;
+    $action = isset($_GET['action']) ? $_GET['action'] : null;
+    $stats = isset($_GET['stats']) ? $_GET['stats'] : null;
+
+    // Handle accept/reject action
+    if ($id && $action) {
+        // Validate action
+        if ($action !== 'accept' && $action !== 'reject') {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Invalid action. Must be "accept" or "reject".'
+            ]);
+            exit();
+        }
+
+        // Check if appointment exists
+        $checkQuery = "SELECT * FROM appointments WHERE appointment_id = ?";
+        $checkStmt = mysqli_prepare($conn, $checkQuery);
+
+        if (!$checkStmt) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to prepare statement: ' . mysqli_error($conn)
+            ]);
+            exit();
+        }
+
+        mysqli_stmt_bind_param($checkStmt, "i", $id);
+        mysqli_stmt_execute($checkStmt);
+        $result = mysqli_stmt_get_result($checkStmt);
+
+        if (mysqli_num_rows($result) === 0) {
+            http_response_code(404);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Appointment not found'
+            ]);
+            exit();
+        }
+
+        // Set new status based on action
+        $newStatus = ($action === 'accept') ? 'Scheduled' : 'Cancelled';
+
+        // Update appointment status
+        $updateQuery = "UPDATE appointments SET status = ?, updated_at = NOW() WHERE appointment_id = ?";
+        $updateStmt = mysqli_prepare($conn, $updateQuery);
+
+        if (!$updateStmt) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to prepare update statement: ' . mysqli_error($conn)
+            ]);
+            exit();
+        }
+
+        mysqli_stmt_bind_param($updateStmt, "si", $newStatus, $id);
+
+        if (!mysqli_stmt_execute($updateStmt)) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to update appointment: ' . mysqli_error($conn)
+            ]);
+            exit();
+        }
+
+        echo json_encode([
+            'success' => true,
+            'message' => "Appointment has been " . ($action === 'accept' ? 'accepted' : 'rejected')
+        ]);
+        exit();
+    }
+
+    // Handle monthly statistics
+    if ($stats === 'month') {
+        $currentMonth = date('Y-m');
+
+        $statsQuery = "SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 'Scheduled' OR status = 'Requested' THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed
+        FROM appointments 
+        WHERE DATE_FORMAT(appointment_datetime, '%Y-%m') = ?";
+
+        $statsStmt = mysqli_prepare($conn, $statsQuery);
+
+        if (!$statsStmt) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to prepare stats statement: ' . mysqli_error($conn)
+            ]);
+            exit();
+        }
+
+        mysqli_stmt_bind_param($statsStmt, "s", $currentMonth);
+
+        if (!mysqli_stmt_execute($statsStmt)) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to execute query: ' . mysqli_error($conn)
+            ]);
+            exit();
+        }
+
+        $statsResult = mysqli_stmt_get_result($statsStmt);
+
+        if (!$statsResult) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to get result: ' . mysqli_error($conn)
+            ]);
+            exit();
+        }
+
+        $stats = mysqli_fetch_assoc($statsResult);
+
+        // Ensure values are numeric and not null
+        $stats['total'] = intval($stats['total']) ?? 0;
+        $stats['pending'] = intval($stats['pending']) ?? 0;
+        $stats['completed'] = intval($stats['completed']) ?? 0;
+
+        echo json_encode([
+            'success' => true,
+            'stats' => $stats
+        ]);
+        exit();
+    }
 
     // If specific appointment ID is requested
     if ($id) {
@@ -88,8 +221,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit();
     }
 
-    // For listing appointments - either by date or all appointments
-    if ($date) {
+    // Filter by status if provided
+    if ($status && $status !== 'all') {
+        // Get appointments with specific status
+        $query = "SELECT 
+                    a.appointment_id,
+                    a.patient_id,
+                    a.doctor_id,
+                    a.appointment_datetime,
+                    a.reason_for_visit,
+                    a.notes,
+                    a.status,
+                    pu.first_name as patient_first_name,
+                    pu.last_name as patient_last_name,
+                    du.first_name as doctor_first_name,
+                    du.last_name as doctor_last_name
+                  FROM appointments a 
+                  JOIN patients p ON a.patient_id = p.patient_id 
+                  JOIN users pu ON p.user_id = pu.user_id
+                  JOIN doctors d ON a.doctor_id = d.doctor_id
+                  JOIN users du ON d.user_id = du.user_id
+                  WHERE a.status = ?
+                  ORDER BY a.appointment_datetime";
+
+        $stmt = mysqli_prepare($conn, $query);
+        if (!$stmt) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to prepare statement: ' . mysqli_error($conn)
+            ]);
+            exit();
+        }
+
+        mysqli_stmt_bind_param($stmt, "s", $status);
+    }
+    // For listing appointments by date
+    else if ($date) {
         // Filter by specific date
         $query = "SELECT 
                     a.appointment_id,
