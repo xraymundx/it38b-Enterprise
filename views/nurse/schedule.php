@@ -1,6 +1,6 @@
 <?php
-
-require('../config/config.php');
+// Include the configuration file
+require_once __DIR__ . '/../../config/config.php';
 
 // Check if user is logged in and is a nurse
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'nurse') {
@@ -8,93 +8,89 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
     exit();
 }
 
+// Ensure database connection is established
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    die("Database connection not established properly. Please check your configuration.");
+}
+
 // Initialize selectedDate and ensure consistent formatting
 $selectedDate = null;
 $dayOfWeek = null;
 $appointments = []; // Initialize appointments array
+
 // Check if the 'date' parameter is provided via GET
 if (isset($_GET['date'])) {
     // Get the selected date from the URL and format it to Y-m-d
     $selectedDate = date('Y-m-d', strtotime($_GET['date']));
-
     // Get the day of the week for the selected date
     $dayOfWeek = date('l', strtotime($selectedDate));
-
-    // List of days the clinic is closed (e.g., Sunday)
-    $clinicClosedDays = ['Sunday'];
-
-    // Check if the selected date is a clinic closed day
-    if (in_array($dayOfWeek, $clinicClosedDays)) {
-        echo "<p class='text-center text-gray-500 mt-8'>No clinic schedule for the selected date.</p>";
-    } else {
-        // Query to fetch appointments for the selected date
-        $query = "SELECT a.*, p.first_name, p.last_name, d.first_name as doctor_first_name, d.last_name as doctor_last_name
-                  FROM appointments a
-                  JOIN patients p ON a.patient_id = p.patient_id
-                  JOIN doctors d ON a.doctor_id = d.doctor_id
-                  WHERE DATE(a.appointment_datetime) = ?
-                  ORDER BY a.appointment_datetime";
-
-        // Prepare and execute the SQL query
-        $stmt = mysqli_prepare($conn, $query);
-        mysqli_stmt_bind_param($stmt, "s", $selectedDate); // Use $selectedDate directly
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-
-        // Fetch appointments as an associative array
-        $appointments = mysqli_fetch_all($result, MYSQLI_ASSOC);
-
-        // You can now use the $appointments variable to display the fetched data
-        // Example:
-        // foreach ($appointments as $appointment) {
-        //     echo "Patient: " . $appointment['first_name'] . " " . $appointment['last_name'];
-        // }
-    }
-} else {
-    echo "No date selected.";
 }
 
+// Fetch doctors with their specializations
 $doctorsQuery = "SELECT d.doctor_id, d.user_id, u.first_name, u.last_name, s.specialization_name
-                  FROM doctors d
-                  JOIN users u ON d.user_id = u.user_id
-                  JOIN specializations s ON d.specialization_id = s.specialization_id
-                  ORDER BY u.last_name, u.first_name";
-$doctorsResult = mysqli_query($conn, $doctorsQuery);
-$doctors = mysqli_fetch_all($doctorsResult, MYSQLI_ASSOC);
+                FROM doctors d
+                JOIN users u ON d.user_id = u.user_id
+                JOIN specializations s ON d.specialization_id = s.specialization_id
+                ORDER BY u.last_name, u.first_name";
 
-// Ensure $dayOfWeek is not null before running the query
+try {
+    $doctorsResult = mysqli_query($conn, $doctorsQuery);
+    if (!$doctorsResult) {
+        throw new Exception("Error fetching doctors: " . mysqli_error($conn));
+    }
+    $doctors = mysqli_fetch_all($doctorsResult, MYSQLI_ASSOC);
+} catch (Exception $e) {
+    error_log("Database error: " . $e->getMessage());
+    $doctors = [];
+}
+
+// Fetch doctor schedules for the selected day
 $doctorSchedules = [];
 if ($dayOfWeek) {
     $scheduleQuery = "SELECT ds.*, d.user_id, u.first_name, u.last_name
-                      FROM doctor_schedule ds
-                      JOIN doctors d ON ds.doctor_id = d.doctor_id
-                      JOIN users u ON d.user_id = u.user_id
-                      WHERE ds.day_of_week = ? AND ds.is_available = 1";
-    $scheduleStmt = mysqli_prepare($conn, $scheduleQuery);
-    mysqli_stmt_bind_param($scheduleStmt, "s", $dayOfWeek); // Use $dayOfWeek based on $selectedDate
-    mysqli_stmt_execute($scheduleStmt);
-    $scheduleResult = mysqli_stmt_get_result($scheduleStmt);
-    while ($row = mysqli_fetch_assoc($scheduleResult)) {
-        $doctorSchedules[$row['doctor_id']] = $row;
+                     FROM doctor_schedule ds
+                     JOIN doctors d ON ds.doctor_id = d.doctor_id
+                     JOIN users u ON d.user_id = u.user_id
+                     WHERE ds.day_of_week = ? AND ds.is_available = 1";
+    try {
+        $scheduleStmt = mysqli_prepare($conn, $scheduleQuery);
+        if (!$scheduleStmt) {
+            throw new Exception("Error preparing schedule query: " . mysqli_error($conn));
+        }
+        mysqli_stmt_bind_param($scheduleStmt, "s", $dayOfWeek);
+        mysqli_stmt_execute($scheduleStmt);
+        $scheduleResult = mysqli_stmt_get_result($scheduleStmt);
+        while ($row = mysqli_fetch_assoc($scheduleResult)) {
+            $doctorSchedules[$row['doctor_id']] = $row;
+        }
+    } catch (Exception $e) {
+        error_log("Database error: " . $e->getMessage());
     }
 }
 
+// Fetch doctor availability exceptions for the selected date
 $doctorExceptions = [];
 if ($selectedDate) {
     $exceptionsQuery = "SELECT dae.*, d.user_id, u.first_name, u.last_name
-                        FROM doctor_availability_exceptions dae
-                        JOIN doctors d ON dae.doctor_id = d.doctor_id
-                        JOIN users u ON d.user_id = u.user_id
-                        WHERE dae.exception_date = ?";
-    $exceptionsStmt = mysqli_prepare($conn, $exceptionsQuery);
-    mysqli_stmt_bind_param($exceptionsStmt, "s", $selectedDate); // Use $selectedDate directly
-    mysqli_stmt_execute($exceptionsStmt);
-    $exceptionsResult = mysqli_stmt_get_result($exceptionsStmt);
-    while ($row = mysqli_fetch_assoc($exceptionsResult)) {
-        $doctorExceptions[$row['doctor_id']] = $row;
+                       FROM doctor_availability_exceptions dae
+                       JOIN doctors d ON dae.doctor_id = d.doctor_id
+                       JOIN users u ON d.user_id = u.user_id
+                       WHERE dae.exception_date = ?";
+    try {
+        $exceptionsStmt = mysqli_prepare($conn, $exceptionsQuery);
+        if (!$exceptionsStmt) {
+            throw new Exception("Error preparing exceptions query: " . mysqli_error($conn));
+        }
+        mysqli_stmt_bind_param($exceptionsStmt, "s", $selectedDate);
+        mysqli_stmt_execute($exceptionsStmt);
+        $exceptionsResult = mysqli_stmt_get_result($exceptionsStmt);
+        while ($row = mysqli_fetch_assoc($exceptionsResult)) {
+            $doctorExceptions[$row['doctor_id']] = $row;
+        }
+    } catch (Exception $e) {
+        error_log("Database error: " . $e->getMessage());
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -108,13 +104,15 @@ if ($selectedDate) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://unpkg.com/alpinejs" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
-<body class="bg-gray-100">
+<body class="bg-gray-50">
     <div class="container mx-auto px-4 py-8" x-data="scheduleManager()">
         <div class="mb-8">
             <label for="calendar" class="block text-sm font-medium text-gray-700 mb-1">Select Date:</label>
-            <input type="text" id="calendar" class="w-full p-2 border rounded"
+            <input type="text" id="calendar"
+                class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Please select a date from the calendar">
         </div>
 
@@ -248,13 +246,14 @@ if ($selectedDate) {
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
                             <template x-for="appointment in appointments" :key="appointment.appointment_id">
                                 <tr>
-                                    <td class="px-6 py-4" x-text="appointment.first_name + ' ' + appointment.last_name">
+                                    <td class="px-6 py-4"
+                                        x-text="appointment.patient_first_name + ' ' + appointment.patient_last_name">
                                     </td>
                                     <td class="px-6 py-4"
                                         x-text="'Dr. ' + appointment.doctor_first_name + ' ' + appointment.doctor_last_name">
@@ -263,10 +262,45 @@ if ($selectedDate) {
                                     <td class="px-6 py-4" x-text="appointment.reason_for_visit"></td>
                                     <td class="px-6 py-4">
                                         <span :class="getStatusClass(appointment.status)"
-                                            x-text="capitalizeFirst(appointment.status)"></span>
+                                            x-text="appointment.status"></span>
                                     </td>
                                     <td class="px-6 py-4" x-text="appointment.notes || ''"></td>
-                                    <td class="px-6 py-4" x-text="formatDate(appointment.created_at)"></td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex space-x-2">
+                                            <button @click="viewAppointment(appointment.appointment_id)"
+                                                class="text-blue-600 hover:text-blue-800">
+                                                <i class="fas fa-eye"></i> View
+                                            </button>
+                                            <template x-if="appointment.status === 'Requested'">
+                                                <div class="flex space-x-2">
+                                                    <button
+                                                        @click="updateAppointmentStatus(appointment.appointment_id, 'Scheduled')"
+                                                        class="text-green-600 hover:text-green-800">
+                                                        <i class="fas fa-check"></i> Schedule
+                                                    </button>
+                                                    <button
+                                                        @click="updateAppointmentStatus(appointment.appointment_id, 'Cancelled')"
+                                                        class="text-red-600 hover:text-red-800">
+                                                        <i class="fas fa-times"></i> Reject
+                                                    </button>
+                                                </div>
+                                            </template>
+                                            <template x-if="appointment.status === 'Scheduled'">
+                                                <div class="flex space-x-2">
+                                                    <button
+                                                        @click="updateAppointmentStatus(appointment.appointment_id, 'Completed')"
+                                                        class="text-green-600 hover:text-green-800">
+                                                        <i class="fas fa-check-double"></i> Complete
+                                                    </button>
+                                                    <button
+                                                        @click="updateAppointmentStatus(appointment.appointment_id, 'No Show')"
+                                                        class="text-red-600 hover:text-red-800">
+                                                        <i class="fas fa-user-times"></i> No Show
+                                                    </button>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </td>
                                 </tr>
                             </template>
                         </tbody>
@@ -275,6 +309,7 @@ if ($selectedDate) {
             </div>
         </div>
 
+        <!-- Add Appointment Modal -->
         <div x-show="showAddModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full"
             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
@@ -379,7 +414,7 @@ if ($selectedDate) {
                 selectedDoctor: '',
                 selectedSlots: [],
                 currentDate: "<?= $selectedDate ?>",
-                appointments: <?= json_encode($appointments) ?>,
+                appointments: [],
                 loading: false,
                 showAddModal: false,
                 patients: [],
@@ -396,21 +431,18 @@ if ($selectedDate) {
                 init() {
                     const initialDate = "<?= $selectedDate ?>";
                     this.currentDate = initialDate || new Date().toISOString().split('T')[0];
-                    console.log('Initial currentDate:', this.currentDate);
+
                     flatpickr("#calendar", {
                         dateFormat: "Y-m-d",
                         defaultDate: this.currentDate,
                         onChange: (selectedDates) => {
-                            console.log('Selected dates from Flatpickr:', selectedDates);
                             if (selectedDates.length > 0) {
                                 const selectedDate = selectedDates[0];
                                 const year = selectedDate.getFullYear();
-                                const month = String(selectedDate.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+                                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
                                 const day = String(selectedDate.getDate()).padStart(2, '0');
                                 const formattedDate = `${year}-${month}-${day}`;
-                                console.log('Formatted date:', formattedDate);
                                 this.currentDate = formattedDate;
-                                console.log('Updated currentDate:', this.currentDate);
                                 this.loadAppointments();
                                 if (this.selectedDoctor) {
                                     this.loadDoctorAvailability(this.selectedDoctor);
@@ -437,23 +469,23 @@ if ($selectedDate) {
                         }
                     });
 
-
                     // Load patients
                     this.loadPatients();
 
-                    // Initial load of appointments based on the initial currentDate
+                    // Initial load of appointments
                     this.loadAppointments();
                 },
 
                 async loadPatients() {
                     try {
-                        const response = await fetch('../api/patients.php');
+                        const response = await fetch('/it38b-Enterprise/api/patients.php');
                         if (response.ok) {
                             const data = await response.json();
                             this.patients = data.patients;
                         }
                     } catch (error) {
                         console.error('Error loading patients:', error);
+                        Swal.fire('Error', 'Failed to load patients', 'error');
                     }
                 },
 
@@ -461,13 +493,14 @@ if ($selectedDate) {
                     if (!this.newAppointment.doctor_id || !this.newAppointment.date) return;
 
                     try {
-                        const response = await fetch(`../api/doctor/availability.php?doctor_id=${this.newAppointment.doctor_id}&date=${this.newAppointment.date}`);
+                        const response = await fetch(`/it38b-Enterprise/api/doctor/availability.php?doctor_id=${this.newAppointment.doctor_id}&date=${this.newAppointment.date}`);
                         if (response.ok) {
                             const data = await response.json();
                             this.availableTimeSlots = data.timeSlots || [];
                         }
                     } catch (error) {
                         console.error('Error loading available time slots:', error);
+                        Swal.fire('Error', 'Failed to load available time slots', 'error');
                     }
                 },
 
@@ -475,7 +508,7 @@ if ($selectedDate) {
                     if (!this.validateAppointment()) return;
 
                     try {
-                        const response = await fetch('../api/appointments.php', {
+                        const response = await fetch('/it38b-Enterprise/api/appointments.php', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -483,38 +516,39 @@ if ($selectedDate) {
                             body: JSON.stringify(this.newAppointment)
                         });
 
-                        if (response.ok) {
+                        const result = await response.json();
+                        if (result.success) {
+                            Swal.fire('Success', 'Appointment scheduled successfully!', 'success');
                             this.showAddModal = false;
                             this.resetNewAppointment();
                             this.loadAppointments();
-                            alert('Appointment scheduled successfully!');
                         } else {
-                            throw new Error('Failed to schedule appointment');
+                            throw new Error(result.error || 'Failed to schedule appointment');
                         }
                     } catch (error) {
-                        alert('Error scheduling appointment: ' + error.message);
+                        Swal.fire('Error', error.message, 'error');
                     }
                 },
 
                 validateAppointment() {
                     if (!this.newAppointment.doctor_id) {
-                        alert('Please select a doctor');
+                        Swal.fire('Error', 'Please select a doctor', 'error');
                         return false;
                     }
                     if (!this.newAppointment.patient_id) {
-                        alert('Please select a patient');
+                        Swal.fire('Error', 'Please select a patient', 'error');
                         return false;
                     }
                     if (!this.newAppointment.date) {
-                        alert('Please select a date');
+                        Swal.fire('Error', 'Please select a date', 'error');
                         return false;
                     }
                     if (!this.newAppointment.time) {
-                        alert('Please select a time');
+                        Swal.fire('Error', 'Please select a time', 'error');
                         return false;
                     }
                     if (!this.newAppointment.reason) {
-                        alert('Please enter a reason for visit');
+                        Swal.fire('Error', 'Please enter a reason for visit', 'error');
                         return false;
                     }
                     return true;
@@ -534,33 +568,35 @@ if ($selectedDate) {
 
                 selectDoctor(doctorId) {
                     this.selectedDoctor = doctorId;
-                    this.selectedSlots = []; // Clear selected slots when changing doctor
+                    this.selectedSlots = [];
                     this.loadDoctorAvailability(doctorId);
                 },
 
                 async loadAppointments() {
                     this.loading = true;
                     try {
-                        const response = await fetch(`../api/appointments.php?date=${this.currentDate}`);
+                        const response = await fetch(`/it38b-Enterprise/api/appointments.php?date=${this.currentDate}`);
                         if (response.ok) {
                             const data = await response.json();
-                            this.appointments = data.appointments;
+                            this.appointments = data.appointments || [];
                         }
                     } catch (error) {
                         console.error('Error loading appointments:', error);
+                        Swal.fire('Error', 'Failed to load appointments', 'error');
                     }
                     this.loading = false;
                 },
 
                 async loadDoctorAvailability(doctorId) {
                     try {
-                        const response = await fetch(`../api/doctor/availability.php?doctor_id=${doctorId}&date=${this.currentDate}`);
+                        const response = await fetch(`/it38b-Enterprise/api/doctor/availability.php?doctor_id=${doctorId}&date=${this.currentDate}`);
                         if (response.ok) {
                             const data = await response.json();
                             this.selectedSlots = data.timeSlots || [];
                         }
                     } catch (error) {
                         console.error('Error loading doctor availability:', error);
+                        Swal.fire('Error', 'Failed to load doctor availability', 'error');
                     }
                 },
 
@@ -586,12 +622,12 @@ if ($selectedDate) {
 
                 async saveTimeSlots() {
                     if (!this.selectedDoctor) {
-                        alert('Please select a doctor first');
+                        Swal.fire('Error', 'Please select a doctor first', 'error');
                         return;
                     }
 
                     try {
-                        const response = await fetch('../api/doctor/availability.php', {
+                        const response = await fetch('/it38b-Enterprise/api/doctor/availability.php', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -603,13 +639,14 @@ if ($selectedDate) {
                             })
                         });
 
-                        if (response.ok) {
-                            alert('Doctor availability saved successfully!');
+                        const result = await response.json();
+                        if (result.success) {
+                            Swal.fire('Success', 'Doctor availability saved successfully!', 'success');
                         } else {
-                            throw new Error('Failed to save doctor availability');
+                            throw new Error(result.error || 'Failed to save doctor availability');
                         }
                     } catch (error) {
-                        alert('Error saving doctor availability: ' + error.message);
+                        Swal.fire('Error', error.message, 'error');
                     }
                 },
 
@@ -631,17 +668,80 @@ if ($selectedDate) {
                     });
                 },
 
-                capitalizeFirst(string) {
-                    return string.charAt(0).toUpperCase() + string.slice(1);
-                },
-
                 getStatusClass(status) {
                     const classes = {
-                        'scheduled': 'bg-blue-100 text-blue-800',
-                        'completed': 'bg-green-100 text-green-800',
-                        'cancelled': 'bg-red-100 text-red-800'
+                        'Requested': 'bg-yellow-100 text-yellow-800',
+                        'Scheduled': 'bg-blue-100 text-blue-800',
+                        'Completed': 'bg-green-100 text-green-800',
+                        'No Show': 'bg-red-100 text-red-800',
+                        'Cancelled': 'bg-gray-100 text-gray-800'
                     };
-                    return `px-2 py-1 rounded-full text-xs ${classes[status] || 'bg-gray-100 text-gray-800'}`;
+                    return `px-2 py-1 rounded-full text-xs font-semibold ${classes[status] || 'bg-gray-100 text-gray-800'}`;
+                },
+
+                async viewAppointment(id) {
+                    try {
+                        const response = await fetch(`/it38b-Enterprise/api/appointments.php?id=${id}`);
+                        const data = await response.json();
+
+                        if (data.success) {
+                            const appointment = data.appointment;
+                            Swal.fire({
+                                title: 'Appointment Details',
+                                html: `
+                                    <div class="text-left">
+                                        <p><strong>Date & Time:</strong> ${new Date(appointment.appointment_datetime).toLocaleString()}</p>
+                                        <p><strong>Patient:</strong> ${appointment.patient_first_name} ${appointment.patient_last_name}</p>
+                                        <p><strong>Doctor:</strong> Dr. ${appointment.doctor_first_name} ${appointment.doctor_last_name}</p>
+                                        <p><strong>Reason:</strong> ${appointment.reason_for_visit}</p>
+                                        <p><strong>Status:</strong> ${appointment.status}</p>
+                                        <p><strong>Notes:</strong> ${appointment.notes || 'None'}</p>
+                                    </div>
+                                `,
+                                confirmButtonText: 'Close'
+                            });
+                        } else {
+                            throw new Error(data.error || 'Failed to load appointment details');
+                        }
+                    } catch (error) {
+                        Swal.fire('Error', error.message, 'error');
+                    }
+                },
+
+                async updateAppointmentStatus(id, newStatus) {
+                    try {
+                        const result = await Swal.fire({
+                            title: 'Confirm Status Update',
+                            text: `Are you sure you want to mark this appointment as ${newStatus}?`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, update it',
+                            cancelButtonText: 'No, cancel'
+                        });
+
+                        if (result.isConfirmed) {
+                            const response = await fetch('/it38b-Enterprise/api/appointments.php', {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    appointment_id: id,
+                                    status: newStatus
+                                })
+                            });
+
+                            const data = await response.json();
+                            if (data.success) {
+                                Swal.fire('Success', 'Appointment status updated successfully', 'success');
+                                this.loadAppointments();
+                            } else {
+                                throw new Error(data.error || 'Failed to update appointment status');
+                            }
+                        }
+                    } catch (error) {
+                        Swal.fire('Error', error.message, 'error');
+                    }
                 }
             };
         }

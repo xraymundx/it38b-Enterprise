@@ -4,15 +4,15 @@ require_once __DIR__ . '/../config/config.php';
 
 // Ensure 'id' is present and valid
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    header("Location: /it38b-Enterprise/index.php?page=patients&error=Invalid+patient+ID");
+    header("Location: /it38b-Enterprise/views/nurse/patients.php?error=Invalid+patient+ID");
     exit();
 }
 
 $patientId = intval($_GET['id']);
 
 // Fetch patient with all related information
-$query = "SELECT p.patient_id, u.first_name, u.last_name, p.date_of_birth, u.email, u.phone_number,
-          pd.description, pd.address, pd.gender, pd.medical_record_number, pd.insurance_provider,
+$query = "SELECT p.patient_id, p.date_of_birth, p.gender, u.first_name, u.last_name, u.email, u.phone_number,
+          pd.description, pd.address, pd.medical_record_number, pd.insurance_provider,
           pd.insurance_policy_number, pd.emergency_contact_name, pd.emergency_contact_phone, pd.notes
           FROM patients p
           JOIN users u ON p.user_id = u.user_id
@@ -28,7 +28,7 @@ $stmt->close();
 
 // Redirect if patient not found
 if (!$patient) {
-    header("Location: /it38b-Enterprise/index.php?page=patients&error=Patient+not+found");
+    header("Location: /it38b-Enterprise/views/nurse/patients.php?error=Patient+not+found");
     exit();
 }
 ?>
@@ -199,7 +199,7 @@ if (!$patient) {
                     class="detail-value"><?php echo nl2br(htmlspecialchars($patient['notes'] ?? 'No additional notes')); ?></span>
             </div>
         </div>
-        <a href="/it38b-Enterprise/index.php?page=patients" class="back-link">Back to Patients</a>
+        <a href="/it38b-Enterprise/routes/dashboard_router.php?page=patients" class="back-link">Back to Patients</a>
     </div>
 </body>
 

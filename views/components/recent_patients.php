@@ -29,8 +29,9 @@ $result = $conn->query($query);
                         <p><?php echo htmlspecialchars($patient['description']); ?></p>
                         <small>Added: <?php echo date('M d, Y', strtotime($patient['created_at'])); ?></small>
                     </div>
-                    <a href="<?php echo $config['app']['url']; ?>/index.php?page=view_patient&id=<?php echo $patient['patient_id']; ?>"
-                        class="view-link">View Details</a>
+                    <button
+                        onclick="window.location.href='/it38b-Enterprise/functions/view_patient.php?id=<?php echo $patient['patient_id']; ?>'"
+                        class="view-button">View Details</button>
                 </div>
             <?php endwhile; ?>
         </div>
@@ -90,17 +91,19 @@ $result = $conn->query($query);
         font-size: 0.8em;
     }
 
-    .view-link {
+    .view-button {
         padding: 8px 15px;
         background: #6c5dd3;
         color: white;
-        text-decoration: none;
+        border: none;
         border-radius: 5px;
         font-size: 0.9em;
-        transition: background 0.3s;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.1s;
     }
 
-    .view-link:hover {
+    .view-button:hover {
         background: #5649a8;
+        transform: translateY(-2px);
     }
 </style>

@@ -19,7 +19,55 @@ if ($_SESSION['role'] !== 'nurse') {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
     $status = isset($_GET['status']) ? $_GET['status'] : null;
+    $id = isset($_GET['id']) ? (int) $_GET['id'] : null;
 
+    // If specific appointment ID is requested
+    if ($id) {
+        $query = "SELECT 
+                    a.appointment_id,
+                    a.patient_id,
+                    a.doctor_id,
+                    a.appointment_datetime,
+                    a.reason_for_visit,
+                    a.notes,
+                    a.status,
+                    a.created_at,
+                    a.updated_at,
+                    pu.first_name as patient_first_name,
+                    pu.last_name as patient_last_name,
+                    pu.email as patient_email,
+                    du.first_name as doctor_first_name,
+                    du.last_name as doctor_last_name,
+                    du.email as doctor_email
+                  FROM appointments a 
+                  JOIN patients p ON a.patient_id = p.patient_id 
+                  JOIN users pu ON p.user_id = pu.user_id
+                  JOIN doctors d ON a.doctor_id = d.doctor_id
+                  JOIN users du ON d.user_id = du.user_id
+                  WHERE a.appointment_id = ?";
+
+        $stmt = mysqli_prepare($conn, $query);
+        mysqli_stmt_bind_param($stmt, "i", $id);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $appointment = mysqli_fetch_assoc($result);
+
+        if ($appointment) {
+            echo json_encode([
+                'success' => true,
+                'appointment' => $appointment
+            ]);
+        } else {
+            http_response_code(404);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Appointment not found'
+            ]);
+        }
+        exit();
+    }
+
+    // For listing appointments
     $query = "SELECT 
                 a.appointment_id,
                 a.patient_id,
@@ -40,28 +88,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
               JOIN patients p ON a.patient_id = p.patient_id 
               JOIN users pu ON p.user_id = pu.user_id
               JOIN doctors d ON a.doctor_id = d.doctor_id
-              JOIN users du ON d.user_id = du.user_id
-              WHERE DATE(a.appointment_datetime) = ?";
+              JOIN users du ON d.user_id = du.user_id";
 
-    $params = [$date];
-    $types = "s";
+    $params = [];
+    $types = "";
+
+    if ($date) {
+        $query .= " WHERE DATE(a.appointment_datetime) = ?";
+        $params[] = $date;
+        $types .= "s";
+    }
 
     if ($status && $status !== 'all') {
-        $query .= " AND a.status = ?";
+        $query .= $date ? " AND" : " WHERE";
+        $query .= " a.status = ?";
         $params[] = $status;
         $types .= "s";
     }
 
-    $query .= " ORDER BY a.appointment_datetime";
+    $query .= " ORDER BY a.appointment_datetime DESC";
 
     $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, $types, ...$params);
+    if (!empty($params)) {
+        mysqli_stmt_bind_param($stmt, $types, ...$params);
+    }
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
 
     if (!$result) {
         http_response_code(500);
-        echo json_encode(['error' => 'Failed to fetch appointments: ' . mysqli_error($conn)]);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Failed to fetch appointments: ' . mysqli_error($conn)
+        ]);
         exit();
     }
 

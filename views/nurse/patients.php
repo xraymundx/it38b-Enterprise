@@ -1,6 +1,9 @@
 <?php
+
+
 // Include database connection
 require '../config/config.php';
+require_once __DIR__ . '/../../config/config.php';
 
 // Number of records to display per page
 $recordsPerPage = 10;
@@ -18,12 +21,10 @@ $totalRowCount = $totalResult->fetch_assoc()['total'];
 $totalPages = ceil($totalRowCount / $recordsPerPage);
 
 // Fetch patients for the current page
-$query = "SELECT p.patient_id, u.first_name, u.last_name, p.date_of_birth, u.email, u.phone_number,
-          pd.medical_record_number, pd.insurance_provider, pd.insurance_policy_number,
-          pd.emergency_contact_name, pd.emergency_contact_phone
+$query = "SELECT p.patient_id, u.user_id, u.first_name, u.last_name, p.date_of_birth, u.email, 
+          u.phone_number, p.gender
           FROM patients p
           JOIN users u ON p.user_id = u.user_id
-          LEFT JOIN patient_descriptions pd ON p.patient_id = pd.patient_id
           ORDER BY u.last_name, u.first_name LIMIT ?, ?";
 
 $stmt = $conn->prepare($query);
@@ -44,7 +45,7 @@ function generatePaginationLinks($currentPage, $totalPages)
             if ($i == $currentPage) {
                 $links .= '<span class="active">' . $i . '</span>';
             } else {
-                $links .= '<button onclick="window.location.href=\'?page=patients&page_num=' . $i . '\'">' . $i . '</button>';
+                $links .= '<button onclick="window.location.href=\'?page_num=' . $i . '\'">' . $i . '</button>';
             }
         } elseif (($i == $currentPage - $range - 1 && $currentPage - $range > 2) || ($i == $currentPage + $range + 1 && $currentPage + $range < $totalPages - 1)) {
             $links .= '<span>...</span>';
@@ -291,7 +292,8 @@ function generatePaginationLinks($currentPage, $totalPages)
 
         #addPatientModal input[type="text"],
         #addPatientModal input[type="email"],
-        #addPatientModal input[type="date"] {
+        #addPatientModal input[type="date"],
+        #addPatientModal select {
             width: calc(100% - 16px);
             padding: 10px;
             margin-bottom: 15px;
@@ -383,6 +385,7 @@ function generatePaginationLinks($currentPage, $totalPages)
                         <th>First Name</th>
                         <th>Last Name</th>
                         <th>Date of Birth</th>
+                        <th>Gender</th>
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Actions</th>
@@ -398,18 +401,20 @@ function generatePaginationLinks($currentPage, $totalPages)
                                 <td data-label="First Name"><?php echo htmlspecialchars($patient['first_name']); ?></td>
                                 <td data-label="Last Name"><?php echo htmlspecialchars($patient['last_name']); ?></td>
                                 <td data-label="Date of Birth"><?php echo htmlspecialchars($patient['date_of_birth']); ?></td>
+                                <td data-label="Gender"><?php echo htmlspecialchars($patient['gender'] ?? 'Not specified'); ?>
+                                </td>
                                 <td data-label="Email"><?php echo htmlspecialchars($patient['email']); ?></td>
                                 <td data-label="Phone"><?php echo htmlspecialchars($patient['phone_number']); ?></td>
                                 <td class="patient-actions" data-label="Actions">
                                     <a
-                                        href="functions/view_patient.php?id=<?php echo htmlspecialchars($patient['patient_id']); ?>">
+                                        href="<?php echo htmlspecialchars('/it38b-Enterprise/functions/view_patient.php?id=' . $patient['patient_id']); ?>">
                                         <span class="material-icons">visibility</span> View</a>
                                     <a
-                                        href="functions/edit_patient.php?id=<?php echo htmlspecialchars($patient['patient_id']); ?>"><span
-                                            class="material-icons">edit</span> Edit</a>
-                                    <a href="functions/delete_patient.php?id=<?php echo htmlspecialchars($patient['patient_id']); ?>"
-                                        onclick="return confirm('Are you sure?')"><span class="material-icons">delete</span>
-                                        Delete</a>
+                                        href="<?php echo htmlspecialchars('/it38b-Enterprise/functions/edit_patient.php?id=' . $patient['patient_id']); ?>">
+                                        <span class="material-icons">edit</span> Edit</a>
+                                    <a href="<?php echo htmlspecialchars('/it38b-Enterprise/functions/delete_patient.php?id=' . $patient['patient_id']); ?>"
+                                        onclick="return confirm('Are you sure you want to delete this patient? This action cannot be undone.')">
+                                        <span class="material-icons">delete</span> Delete</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -433,7 +438,7 @@ function generatePaginationLinks($currentPage, $totalPages)
     <div id="addPatientModal" class="modal">
         <div class="modal-content">
             <h2>Add New Patient</h2>
-            <form action="functions/add_patient.php" method="POST">
+            <form action="/it38b-Enterprise/functions/add_patient.php" method="POST">
                 <div>
                     <label for="first_name">First Name:</label>
                     <input type="text" id="first_name" name="first_name" required>
@@ -445,6 +450,15 @@ function generatePaginationLinks($currentPage, $totalPages)
                 <div>
                     <label for="dob">Date of Birth:</label>
                     <input type="date" id="dob" name="dob" required>
+                </div>
+                <div>
+                    <label for="gender">Gender:</label>
+                    <select id="gender" name="gender" required>
+                        <option value="">Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
                 <div>
                     <label for="email">Email:</label>
@@ -464,10 +478,41 @@ function generatePaginationLinks($currentPage, $totalPages)
 
     <div id="notification" class="notification"></div>
 
+    <!-- Add Credentials Modal -->
+    <div id="credentialsModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <h2>New Patient Account Created</h2>
+            <div id="credentialsInfo"
+                style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-radius: 5px; border-left: 4px solid #5cb85c;">
+                <?php if (isset($_SESSION['new_patient_credentials'])): ?>
+                    <p><strong>Patient:</strong>
+                        <?php echo htmlspecialchars($_SESSION['new_patient_credentials']['name']); ?></p>
+                    <p><strong>Username:</strong>
+                        <?php echo htmlspecialchars($_SESSION['new_patient_credentials']['username']); ?></p>
+                    <p><strong>Temporary Password:</strong> <span
+                            style="font-family: monospace; font-weight: bold; color: #d9534f;"><?php echo htmlspecialchars($_SESSION['new_patient_credentials']['password']); ?></span>
+                    </p>
+                    <p style="margin-top: 15px; font-style: italic; color: #555;">Please provide these credentials to the
+                        patient for their first login.</p>
+                <?php endif; ?>
+            </div>
+            <div class="modal-actions" style="text-align: center; margin-top: 15px;">
+                <button id="copyCredentialsBtn"
+                    style="margin-right: 10px; background-color: #5bc0de; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Copy
+                    to Clipboard</button>
+                <button id="closeCredentialsBtn"
+                    style="background-color: #6c5dd3; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const modal = document.getElementById('addPatientModal');
         const addButton = document.querySelector('.add-patient-button');
         const notificationDiv = document.getElementById('notification');
+        const credentialsModal = document.getElementById('credentialsModal');
+        const closeCredentialsBtn = document.getElementById('closeCredentialsBtn');
+        const copyCredentialsBtn = document.getElementById('copyCredentialsBtn');
 
         function openAddPatientModal() {
             modal.style.display = 'flex';
@@ -482,6 +527,9 @@ function generatePaginationLinks($currentPage, $totalPages)
             if (event.target == modal) {
                 closeAddPatientModal();
             }
+            if (event.target == credentialsModal) {
+                closeCredentialsModal();
+            }
         });
 
         addButton.addEventListener('click', openAddPatientModal);
@@ -495,6 +543,25 @@ function generatePaginationLinks($currentPage, $totalPages)
             }, 3000); // Hide after 3 seconds
         }
 
+        // Credentials modal functions
+        function closeCredentialsModal() {
+            credentialsModal.style.display = 'none';
+            // Clear the session credentials after showing
+            fetch('/it38b-Enterprise/functions/clear_credentials_session.php');
+        }
+
+        closeCredentialsBtn.addEventListener('click', closeCredentialsModal);
+
+        copyCredentialsBtn.addEventListener('click', function () {
+            const credentialsInfo = document.getElementById('credentialsInfo').innerText;
+            navigator.clipboard.writeText(credentialsInfo).then(() => {
+                this.textContent = "Copied!";
+                setTimeout(() => {
+                    this.textContent = "Copy to Clipboard";
+                }, 2000);
+            });
+        });
+
         // Check URL parameters for messages
         const urlParams = new URLSearchParams(window.location.search);
         const successMessage = urlParams.get('success');
@@ -503,14 +570,19 @@ function generatePaginationLinks($currentPage, $totalPages)
         if (successMessage) {
             showNotification(successMessage);
             // Clear the success parameter from the URL
-            history.replaceState(null, null, window.location.pathname + window.location.search.split('&')[0]);
+            history.replaceState(null, null, window.location.pathname);
         }
 
         if (errorMessage) {
             showNotification(errorMessage, 'error');
             // Clear the error parameter from the URL
-            history.replaceState(null, null, window.location.pathname + window.location.search.split('&')[0]);
+            history.replaceState(null, null, window.location.pathname);
         }
+
+        // Show credentials modal if we have new patient credentials
+        <?php if (isset($_SESSION['new_patient_credentials'])): ?>
+            credentialsModal.style.display = 'flex';
+        <?php endif; ?>
     </script>
 
 </body>

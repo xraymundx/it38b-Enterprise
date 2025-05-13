@@ -76,17 +76,28 @@ class Patient
                        insurance_provider, insurance_policy_number, emergency_contact_name, emergency_contact_phone, notes) 
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $descStmt = $this->conn->prepare($descSql);
+
+            // Assign values to variables before binding
+            $description = $data['description'] ?? null;
+            $address = $data['address'] ?? null;
+            $medicalRecordNumber = $data['medical_record_number'] ?? null;
+            $insuranceProvider = $data['insurance_provider'] ?? null;
+            $insurancePolicyNumber = $data['insurance_policy_number'] ?? null;
+            $emergencyContactName = $data['emergency_contact_name'] ?? null;
+            $emergencyContactPhone = $data['emergency_contact_phone'] ?? null;
+            $notes = $data['notes'] ?? null;
+
             $descStmt->bind_param(
                 "issssssss",
                 $patient_id,
-                $data['description'] ?? null,
-                $data['address'] ?? null,
-                $data['medical_record_number'] ?? null,
-                $data['insurance_provider'] ?? null,
-                $data['insurance_policy_number'] ?? null,
-                $data['emergency_contact_name'] ?? null,
-                $data['emergency_contact_phone'] ?? null,
-                $data['notes'] ?? null
+                $description,
+                $address,
+                $medicalRecordNumber,
+                $insuranceProvider,
+                $insurancePolicyNumber,
+                $emergencyContactName,
+                $emergencyContactPhone,
+                $notes
             );
             $descStmt->execute();
 
@@ -131,16 +142,27 @@ class Patient
                            emergency_contact_name = ?, emergency_contact_phone = ?, notes = ? 
                        WHERE patient_id = ?";
             $descStmt = $this->conn->prepare($descSql);
+
+            // Assign values to variables before binding
+            $description = $data['description'] ?? null;
+            $address = $data['address'] ?? null;
+            $medicalRecordNumber = $data['medical_record_number'] ?? null;
+            $insuranceProvider = $data['insurance_provider'] ?? null;
+            $insurancePolicyNumber = $data['insurance_policy_number'] ?? null;
+            $emergencyContactName = $data['emergency_contact_name'] ?? null;
+            $emergencyContactPhone = $data['emergency_contact_phone'] ?? null;
+            $notes = $data['notes'] ?? null;
+
             $descStmt->bind_param(
                 "ssssssssi",
-                $data['description'] ?? null,
-                $data['address'] ?? null,
-                $data['medical_record_number'] ?? null,
-                $data['insurance_provider'] ?? null,
-                $data['insurance_policy_number'] ?? null,
-                $data['emergency_contact_name'] ?? null,
-                $data['emergency_contact_phone'] ?? null,
-                $data['notes'] ?? null,
+                $description,
+                $address,
+                $medicalRecordNumber,
+                $insuranceProvider,
+                $insurancePolicyNumber,
+                $emergencyContactName,
+                $emergencyContactPhone,
+                $notes,
                 $id
             );
             $descStmt->execute();

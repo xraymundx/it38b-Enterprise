@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../../config/config.php';
 
 // Function to get appointments for a specific month
 function getAppointmentsForMonth($year, $month)
