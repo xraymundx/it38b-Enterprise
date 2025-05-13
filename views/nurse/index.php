@@ -466,10 +466,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
                 </a>
                 <div class="subnav">
                     <a href="?page=appointments&status=all">All</a>
-                    <a href="?page=appointments&status=pending">Pending</a>
-                    <a href="?page=appointments&status=approved">Approved</a>
-                    <a href="?page=appointments&status=completed">Completed</a>
-                    <a href="?page=appointments&status=rejected">Rejected</a>
+
                 </div>
             </div>
             <a href="?page=schedule" class="sidenav-item">

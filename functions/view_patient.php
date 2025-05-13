@@ -1,5 +1,6 @@
 <?php
-require_once '../config/config.php'; // DB connection
+require_once __DIR__ . '/../config/config.php';
+
 
 // Ensure 'id' is present and valid
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
@@ -9,8 +10,14 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 
 $patientId = intval($_GET['id']);
 
-// Fetch patient
-$query = "SELECT patient_id, first_name, last_name, date_of_birth, email, phone FROM patients WHERE patient_id = ?";
+// Fetch patient with all related information
+$query = "SELECT p.patient_id, u.first_name, u.last_name, p.date_of_birth, u.email, u.phone_number,
+          pd.description, pd.address, pd.gender, pd.medical_record_number, pd.insurance_provider,
+          pd.insurance_policy_number, pd.emergency_contact_name, pd.emergency_contact_phone, pd.notes
+          FROM patients p
+          JOIN users u ON p.user_id = u.user_id
+          LEFT JOIN patient_descriptions pd ON p.patient_id = pd.patient_id
+          WHERE p.patient_id = ?";
 
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $patientId);
@@ -37,11 +44,7 @@ if (!$patient) {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #e9ecef;
             margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            padding: 20px;
             box-sizing: border-box;
         }
 
@@ -51,7 +54,8 @@ if (!$patient) {
             border-radius: 12px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
             width: 90%;
-            max-width: 600px;
+            max-width: 800px;
+            margin: 0 auto;
         }
 
         h1 {
@@ -63,51 +67,49 @@ if (!$patient) {
         }
 
         .patient-details {
-            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
         }
 
         .detail-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        .detail-row:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
+            margin-bottom: 15px;
         }
 
         .detail-label {
             font-weight: 600;
             color: #495057;
-            width: 150px;
-            margin-right: 20px;
+            display: block;
+            margin-bottom: 5px;
         }
 
         .detail-value {
             color: #212529;
-            font-size: 1.1rem;
         }
 
         .back-link {
             display: inline-block;
-            padding: 12px 24px;
-            background-color: #007bff;
-            color: #ffffff;
+            margin-top: 30px;
+            padding: 10px 20px;
+            background-color: #6c5dd3;
+            color: white;
             text-decoration: none;
-            border-radius: 8px;
+            border-radius: 6px;
             transition: background-color 0.3s ease;
-            font-weight: 500;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
         }
 
         .back-link:hover {
-            background-color: #0056b3;
+            background-color: #5649a8;
+        }
+
+        .section-title {
+            grid-column: 1 / -1;
+            color: #6c5dd3;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 5px;
         }
     </style>
 </head>
@@ -116,6 +118,7 @@ if (!$patient) {
     <div class="container">
         <h1>Patient Details</h1>
         <div class="patient-details">
+            <h3 class="section-title">Basic Information</h3>
             <div class="detail-row">
                 <strong class="detail-label">Patient ID:</strong>
                 <span class="detail-value"><?php echo htmlspecialchars($patient['patient_id']); ?></span>
@@ -134,12 +137,66 @@ if (!$patient) {
                     class="detail-value"><?php echo htmlspecialchars(date("F j, Y", strtotime($patient['date_of_birth']))); ?></span>
             </div>
             <div class="detail-row">
+                <strong class="detail-label">Gender:</strong>
+                <span class="detail-value"><?php echo htmlspecialchars($patient['gender'] ?? 'Not specified'); ?></span>
+            </div>
+
+            <h3 class="section-title">Contact Information</h3>
+            <div class="detail-row">
                 <strong class="detail-label">Email:</strong>
                 <span class="detail-value"><?php echo htmlspecialchars($patient['email']); ?></span>
             </div>
             <div class="detail-row">
                 <strong class="detail-label">Phone:</strong>
-                <span class="detail-value"><?php echo htmlspecialchars($patient['phone']); ?></span>
+                <span class="detail-value"><?php echo htmlspecialchars($patient['phone_number']); ?></span>
+            </div>
+            <div class="detail-row">
+                <strong class="detail-label">Address:</strong>
+                <span
+                    class="detail-value"><?php echo htmlspecialchars($patient['address'] ?? 'Not specified'); ?></span>
+            </div>
+
+            <h3 class="section-title">Medical Information</h3>
+            <div class="detail-row">
+                <strong class="detail-label">Medical Record Number:</strong>
+                <span
+                    class="detail-value"><?php echo htmlspecialchars($patient['medical_record_number'] ?? 'Not assigned'); ?></span>
+            </div>
+            <div class="detail-row">
+                <strong class="detail-label">Description:</strong>
+                <span
+                    class="detail-value"><?php echo htmlspecialchars($patient['description'] ?? 'No description available'); ?></span>
+            </div>
+
+            <h3 class="section-title">Insurance Information</h3>
+            <div class="detail-row">
+                <strong class="detail-label">Insurance Provider:</strong>
+                <span
+                    class="detail-value"><?php echo htmlspecialchars($patient['insurance_provider'] ?? 'Not specified'); ?></span>
+            </div>
+            <div class="detail-row">
+                <strong class="detail-label">Insurance Policy Number:</strong>
+                <span
+                    class="detail-value"><?php echo htmlspecialchars($patient['insurance_policy_number'] ?? 'Not specified'); ?></span>
+            </div>
+
+            <h3 class="section-title">Emergency Contact</h3>
+            <div class="detail-row">
+                <strong class="detail-label">Emergency Contact Name:</strong>
+                <span
+                    class="detail-value"><?php echo htmlspecialchars($patient['emergency_contact_name'] ?? 'Not specified'); ?></span>
+            </div>
+            <div class="detail-row">
+                <strong class="detail-label">Emergency Contact Phone:</strong>
+                <span
+                    class="detail-value"><?php echo htmlspecialchars($patient['emergency_contact_phone'] ?? 'Not specified'); ?></span>
+            </div>
+
+            <h3 class="section-title">Additional Notes</h3>
+            <div class="detail-row" style="grid-column: 1 / -1;">
+                <strong class="detail-label">Notes:</strong>
+                <span
+                    class="detail-value"><?php echo nl2br(htmlspecialchars($patient['notes'] ?? 'No additional notes')); ?></span>
             </div>
         </div>
         <a href="/it38b-Enterprise/index.php?page=patients" class="back-link">Back to Patients</a>

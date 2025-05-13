@@ -187,6 +187,8 @@
         padding: 0;
         margin: 0;
         overflow-y: auto;
+        max-height: 300px;
+        /* Adjust as needed */
     }
 
     .appointment-request-item {
@@ -246,7 +248,9 @@
         padding: 8px 10px;
         cursor: pointer;
         font-size: 0.85em;
-        a transition: opacity 0.3s ease;
+        transition: opacity 0.3s ease;
+        text-decoration: none;
+        /* Prevent text decoration if accidentally nested in <a> */
     }
 
     .accept-button {
@@ -304,15 +308,15 @@
         <div class="stats">
             <div class="stat-line">
                 <span class="stat-label">Total appointments this month</span>
-                <span class="stat-number">50</span>
+                <span class="stat-number" id="total-appointments">0</span>
             </div>
             <div class="stat-line">
                 <span class="stat-label">Total pending appointments this month</span>
-                <span class="stat-number">40</span>
+                <span class="stat-number" id="pending-appointments">0</span>
             </div>
             <div class="stat-line">
                 <span class="stat-label">Total completed appointments this month</span>
-                <span class="stat-number">10</span>
+                <span class="stat-number" id="completed-appointments">0</span>
             </div>
         </div>
         <div class="calender">
@@ -334,63 +338,126 @@
             const appointmentRequestsContainer = document.querySelector('.appointment-requests');
             const appointmentRequestsList = appointmentRequestsContainer.querySelector('.appointment-requests-list');
             const noRequestsMessage = appointmentRequestsContainer.querySelector('.no-requests');
+            const totalAppointmentsSpan = document.getElementById('total-appointments');
+            const pendingAppointmentsSpan = document.getElementById('pending-appointments');
+            const completedAppointmentsSpan = document.getElementById('completed-appointments');
 
-            const requests = [
-                { patient: 'Dan', date: 'March 30, 2025', time: '2:00 pm', id: 1 },
-                { patient: 'Alice', date: 'April 02, 2025', time: '10:30 am', id: 2 },
-                { patient: 'Bob', date: 'April 05, 2025', time: '11:00 am', id: 3 },
-                { patient: 'Charlie', date: 'April 08, 2025', time: '3:15 pm', id: 4 },
-                { patient: 'Eve', date: 'April 10, 2025', time: '9:00 am', id: 5 },
-                { patient: 'Frank', date: 'April 12, 2025', time: '1:45 pm', id: 6 },
-            ];
-
-            if (requests.length > 0) {
-                noRequestsMessage.style.display = 'none';
-                appointmentRequestsList.innerHTML = '';
-                requests.forEach(request => {
-                    const listItem = document.createElement('li');
-                    listItem.classList.add('appointment-request-item');
-                    listItem.innerHTML = `
-                        <div class="patient-info">
-                            <div class="patient-avatar">
-                                <span>${request.patient.charAt(0).toUpperCase()}</span>
-                            </div>
-                            <span class="patient-name">${request.patient}</span>
-                        </div>
-                        <span class="appointment-date">${request.date}</span>
-                        <span class="appointment-time">${request.time}</span>
-                        <div class="appointment-actions">
-                            <button class="accept-button" data-id="${request.id}">Accept</button>
-                            <button class="reject-button" data-id="${request.id}">Reject</button>
-                        </div>
-                    `;
-                    appointmentRequestsList.appendChild(listItem);
-                });
-
-                appointmentRequestsList.addEventListener('click', (event) => {
-                    if (event.target.classList.contains('accept-button')) {
-                        const requestId = event.target.dataset.id;
-                        console.log(`Appointment ${requestId} accepted.`);
-                        event.target.closest('.appointment-request-item').remove();
-                        updateNoRequestsMessage();
-                    } else if (event.target.classList.contains('reject-button')) {
-                        const requestId = event.target.dataset.id;
-                        console.log(`Appointment ${requestId} rejected.`);
-                        event.target.closest('.appointment-request-item').remove();
-                        updateNoRequestsMessage();
+            // Function to fetch appointment requests from the database
+            async function fetchAppointmentRequests() {
+                try {
+                    const response = await fetch('/api/appointments/requests');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                });
-            } else {
-                appointmentRequestsList.style.display = 'none';
-                noRequestsMessage.style.display = 'block';
-            }
+                    const requests = await response.json();
 
-            function updateNoRequestsMessage() {
-                if (appointmentRequestsList.children.length === 0) {
-                    appointmentRequestsList.style.display = 'none';
-                    noRequestsMessage.style.display = 'block';
+                    if (requests && requests.length > 0) {
+                        noRequestsMessage.style.display = 'none';
+                        appointmentRequestsList.style.display = 'block';
+                        appointmentRequestsList.innerHTML = '';
+
+                        requests.forEach(request => {
+                            const listItem = document.createElement('li');
+                            listItem.classList.add('appointment-request-item');
+                            listItem.innerHTML = `
+                                <div class="patient-info">
+                                    <div class="patient-avatar">
+                                        <span>${request.patient_name.charAt(0).toUpperCase()}</span>
+                                    </div>
+                                    <span class="patient-name">${request.patient_name}</span>
+                                </div>
+                                <span class="appointment-date">${new Date(request.appointment_datetime).toLocaleDateString()}</span>
+                                <span class="appointment-time">${new Date(request.appointment_datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                <div class="appointment-actions">
+                                    <button class="accept-button" data-id="${request.appointment_id}">Accept</button>
+                                    <button class="reject-button" data-id="${request.appointment_id}">Reject</button>
+                                </div>
+                            `;
+                            appointmentRequestsList.appendChild(listItem);
+                        });
+                    } else {
+                        appointmentRequestsList.style.display = 'none';
+                        noRequestsMessage.style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('Error fetching appointment requests:', error);
+                    appointmentRequestsList.innerHTML = '<li class="error-message">Failed to load appointment requests.</li>';
+                    noRequestsMessage.style.display = 'none';
                 }
             }
+
+            // Function to handle accepting or rejecting appointment requests
+            async function handleAppointmentAction(appointmentId, action) {
+                try {
+                    const response = await fetch(`/api/appointments/${appointmentId}/${action}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    if (result.success) {
+                        // Show success message
+                        alert(result.message);
+                        // Reload the data
+                        await fetchAppointmentRequests();
+                        await fetchAppointmentStats();
+                    } else {
+                        throw new Error(result.message || 'Failed to process appointment');
+                    }
+                } catch (error) {
+                    console.error(`Error ${action}ing appointment ${appointmentId}:`, error);
+                    alert(`Failed to ${action} appointment: ${error.message}`);
+                }
+            }
+
+            // Function to fetch appointment statistics
+            async function fetchAppointmentStats() {
+                try {
+                    const response = await fetch('/api/appointments');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const stats = await response.json();
+
+                    if (stats) {
+                        totalAppointmentsSpan.textContent = stats.total_appointments || 0;
+                        pendingAppointmentsSpan.textContent = stats.pending_appointments || 0;
+                        completedAppointmentsSpan.textContent = stats.completed_appointments || 0;
+                    } else {
+                        throw new Error('Invalid statistics data received');
+                    }
+                } catch (error) {
+                    console.error('Error fetching appointment stats:', error);
+                    // Set default values on error
+                    totalAppointmentsSpan.textContent = '0';
+                    pendingAppointmentsSpan.textContent = '0';
+                    completedAppointmentsSpan.textContent = '0';
+                }
+            }
+
+            // Event listener for appointment actions
+            appointmentRequestsList.addEventListener('click', (event) => {
+                if (event.target.classList.contains('accept-button')) {
+                    const requestId = event.target.dataset.id;
+                    handleAppointmentAction(requestId, 'accept');
+                } else if (event.target.classList.contains('reject-button')) {
+                    const requestId = event.target.dataset.id;
+                    handleAppointmentAction(requestId, 'reject');
+                }
+            });
+
+            // Initial data load
+            document.addEventListener('DOMContentLoaded', () => {
+                fetchAppointmentRequests();
+                fetchAppointmentStats();
+            });
         });
     </script>
 </body>

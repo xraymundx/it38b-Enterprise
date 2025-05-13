@@ -1,12 +1,12 @@
 <?php
 session_start();
-require 'config/config.php';
+require '../config/config.php';
 require_once 'controllers/AuthController.php';
 
 $error = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $auth = new AuthController($conn);
+    $auth = new AuthController(getDB());
     $loginResult = $auth->attempt($_POST['email'] ?? '', $_POST['password'] ?? '');
 
     if ($loginResult === true) {

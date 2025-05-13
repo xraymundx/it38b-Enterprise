@@ -1,3 +1,39 @@
+<?php
+require_once __DIR__ . '/../../config/config.php';
+
+// Get current month's appointments
+$currentDate = new DateTime();
+$date = $currentDate->format('Y-m-d');
+
+$query = "SELECT a.*, 
+                 pu.first_name as patient_first_name, 
+                 pu.last_name as patient_last_name,
+                 du.first_name as doctor_first_name, 
+                 du.last_name as doctor_last_name
+          FROM appointments a 
+          JOIN patients p ON a.patient_id = p.patient_id 
+          JOIN users pu ON p.user_id = pu.user_id
+          JOIN doctors d ON a.doctor_id = d.doctor_id
+          JOIN users du ON d.user_id = du.user_id
+          WHERE DATE(a.appointment_datetime) = ?
+          ORDER BY a.appointment_datetime";
+
+$stmt = mysqli_prepare($conn, $query);
+mysqli_stmt_bind_param($stmt, "s", $date);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+
+$appointments = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $appointments[] = $row;
+}
+
+// Get total appointments count
+$statsQuery = "SELECT COUNT(*) as total FROM appointments";
+$statsResult = mysqli_query($conn, $statsQuery);
+$stats = mysqli_fetch_assoc($statsResult);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -225,18 +261,17 @@
             <tbody id="calendar-body"></tbody>
         </table>
         <div class="calendar-footer">
-            <div class="total-appointments">Total Appointments</div>
+            <div class="total-appointments">
+                Total Appointments: <span id="total-appointments"><?php echo $stats['total'] ?? 0; ?></span>
+            </div>
             <div class="appointment-filters">
-                <button class="filter active">All</button>
-                <button class="filter">Today</button>
-                <button class="filter">Upcoming</button>
-                <button class="filter">Done</button>
+                <button class="filter active" data-filter="all">All</button>
+                <button class="filter" data-filter="pending">Pending</button>
+                <button class="filter" data-filter="confirmed">Confirmed</button>
+                <button class="filter" data-filter="completed">Completed</button>
             </div>
             <div class="appointments-box" id="appointments-box">
-                <div class="appointment-item">8:00 AM - Dental Checkup</div>
-                <div class="appointment-item">10:30 AM - Physical Therapy</div>
-                <div class="appointment-item">1:00 PM - Vaccination</div>
-                <div class="appointment-item">3:45 PM - Blood Test</div>
+                <!-- Appointments will be loaded here -->
             </div>
         </div>
     </div>
@@ -248,10 +283,63 @@
         const nextMonthBtn = document.querySelector('.next-month');
         const filterButtons = document.querySelectorAll('.appointment-filters button');
         const appointmentsBox = document.getElementById('appointments-box');
+        const totalAppointmentsSpan = document.getElementById('total-appointments');
 
         let currentDate = new Date();
         const today = new Date();
+        let currentFilter = 'all';
 
+        // Function to format appointment time
+        function formatTime(time) {
+            return new Date(`2000-01-01T${time}`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Function to load appointments for a date
+        async function loadAppointments(date) {
+            try {
+                const response = await fetch(`../api/appointments.php?date=${date}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch appointments');
+                }
+                const data = await response.json();
+                displayAppointments(data.appointments || []);
+            } catch (error) {
+                console.error('Error loading appointments:', error);
+                showError('Failed to load appointments');
+            }
+        }
+
+        // Function to display appointments
+        function displayAppointments(appointments) {
+            appointmentsBox.innerHTML = '';
+            if (appointments && appointments.length > 0) {
+                appointments.forEach(appointment => {
+                    if (currentFilter === 'all' || appointment.status === currentFilter) {
+                        const appointmentItem = document.createElement('div');
+                        appointmentItem.classList.add('appointment-item');
+                        appointmentItem.innerHTML = `
+                            <div class="appointment-time">${formatTime(appointment.appointment_datetime)}</div>
+                            <div class="appointment-details">
+                                <div class="patient-name">${appointment.patient_first_name} ${appointment.patient_last_name}</div>
+                                <div class="doctor-name">Dr. ${appointment.doctor_first_name} ${appointment.doctor_last_name}</div>
+                                <div class="reason">${appointment.reason_for_visit}</div>
+                            </div>
+                            <div class="appointment-status ${appointment.status}">${appointment.status}</div>
+                        `;
+                        appointmentsBox.appendChild(appointmentItem);
+                    }
+                });
+            } else {
+                appointmentsBox.innerHTML = '<div class="no-appointments">No appointments for this date</div>';
+            }
+        }
+
+        // Function to show error message
+        function showError(message) {
+            appointmentsBox.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+
+        // Function to generate calendar
         function generateCalendar(date) {
             const year = date.getFullYear();
             const month = date.getMonth();
@@ -267,47 +355,41 @@
             calendarBody.innerHTML = '';
 
             let dayCounter = 1;
-
             for (let i = 0; i < 6; i++) {
                 const row = document.createElement('tr');
-
                 for (let j = 0; j < 7; j++) {
                     const cell = document.createElement('td');
-
                     if (i === 0 && j < startDay) {
                         row.appendChild(cell);
                     } else if (dayCounter > daysInMonth) {
                         row.appendChild(cell);
                     } else {
+                        const currentDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayCounter).padStart(2, '0')}`;
                         cell.textContent = dayCounter;
-                        cell.dataset.date = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayCounter).padStart(2, '0')}`;
+                        cell.dataset.date = currentDate;
                         cell.classList.add('calendar-day');
 
-                        if (
-                            year === today.getFullYear() &&
-                            month === today.getMonth() &&
-                            dayCounter === today.getDate()
-                        ) {
+                        if (year === today.getFullYear() && month === today.getMonth() && dayCounter === today.getDate()) {
                             cell.classList.add('today', 'selected');
+                            loadAppointments(currentDate);
                         }
 
                         cell.addEventListener('click', function () {
-                            document.querySelectorAll('.calendar-day.selected').forEach((el) => el.classList.remove('selected'));
+                            document.querySelectorAll('.calendar-day.selected').forEach(el => el.classList.remove('selected'));
                             this.classList.add('selected');
-                            console.log('Selected date:', this.dataset.date);
+                            loadAppointments(this.dataset.date);
                         });
 
                         row.appendChild(cell);
                         dayCounter++;
                     }
                 }
-
                 calendarBody.appendChild(row);
-
                 if (dayCounter > daysInMonth) break;
             }
         }
 
+        // Event listeners
         function navigateMonth(direction) {
             currentDate.setMonth(currentDate.getMonth() + direction);
             generateCalendar(currentDate);
@@ -318,19 +400,26 @@
             currentDate = new Date(today.getTime());
             generateCalendar(currentDate);
         });
+
         prevMonthBtn.addEventListener('click', () => navigateMonth(-1));
         nextMonthBtn.addEventListener('click', () => navigateMonth(1));
 
-        filterButtons.forEach((button) => {
+        filterButtons.forEach(button => {
             button.addEventListener('click', () => {
-                filterButtons.forEach((btn) => btn.classList.remove('active'));
+                filterButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
-
-                console.log('Filter:', button.textContent);
+                currentFilter = button.dataset.filter;
+                const selectedDate = document.querySelector('.calendar-day.selected')?.dataset.date;
+                if (selectedDate) {
+                    loadAppointments(selectedDate);
+                }
             });
         });
 
-        generateCalendar(currentDate);
+        // Initial calendar generation
+        document.addEventListener('DOMContentLoaded', () => {
+            generateCalendar(currentDate);
+        });
     </script>
 </body>
 

@@ -1,10 +1,9 @@
 <?php
 session_start();
-
-require '../config/config.php';
+require_once __DIR__ . '/../config/config.php';
 
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
-    header('Location: /login.php');
+    header('Location: /it38b-Enterprise/guest.php');
     exit;
 }
 
@@ -14,7 +13,6 @@ switch ($_SESSION['role']) {
         break;
     case 'patient':
         include('../views/patient/index.php');
-
         break;
     case 'doctor':
         include('../views/doctor/index.php');

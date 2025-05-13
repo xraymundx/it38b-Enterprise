@@ -1,6 +1,6 @@
 <?php
 // Include database connection
-require('../config/config.php');
+require '../config/config.php';
 
 // Number of records to display per page
 $recordsPerPage = 10;
@@ -18,7 +18,13 @@ $totalRowCount = $totalResult->fetch_assoc()['total'];
 $totalPages = ceil($totalRowCount / $recordsPerPage);
 
 // Fetch patients for the current page
-$query = "SELECT patient_id, first_name, last_name, date_of_birth, email, phone FROM patients ORDER BY last_name, first_name LIMIT ?, ?";
+$query = "SELECT p.patient_id, u.first_name, u.last_name, p.date_of_birth, u.email, u.phone_number,
+          pd.medical_record_number, pd.insurance_provider, pd.insurance_policy_number,
+          pd.emergency_contact_name, pd.emergency_contact_phone
+          FROM patients p
+          JOIN users u ON p.user_id = u.user_id
+          LEFT JOIN patient_descriptions pd ON p.patient_id = pd.patient_id
+          ORDER BY u.last_name, u.first_name LIMIT ?, ?";
 
 $stmt = $conn->prepare($query);
 $stmt->bind_param("ii", $startIndex, $recordsPerPage);
@@ -393,7 +399,7 @@ function generatePaginationLinks($currentPage, $totalPages)
                                 <td data-label="Last Name"><?php echo htmlspecialchars($patient['last_name']); ?></td>
                                 <td data-label="Date of Birth"><?php echo htmlspecialchars($patient['date_of_birth']); ?></td>
                                 <td data-label="Email"><?php echo htmlspecialchars($patient['email']); ?></td>
-                                <td data-label="Phone"><?php echo htmlspecialchars($patient['phone']); ?></td>
+                                <td data-label="Phone"><?php echo htmlspecialchars($patient['phone_number']); ?></td>
                                 <td class="patient-actions" data-label="Actions">
                                     <a
                                         href="functions/view_patient.php?id=<?php echo htmlspecialchars($patient['patient_id']); ?>">
