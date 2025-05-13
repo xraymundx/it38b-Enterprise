@@ -47,16 +47,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $roleId = null;
         switch ($user_type) {
             case 'patient':
-                $roleId = 1; // Example role ID for patient
+                $roleId = 4; // Example role ID for patient
                 break;
             case 'admin':
-                $roleId = 2; // Example role ID for admin
+                $roleId = 3; // Example role ID for admin
                 break;
             case 'nurse':
-                $roleId = 3; // Example role ID for nurse
+                $roleId = 1; // Example role ID for nurse
                 break;
             case 'doctor':
-                $roleId = 4; // Example role ID for doctor
+                $roleId = 2; // Example role ID for doctor
                 break;
             default:
                 $roleId = null; // Or some default role ID

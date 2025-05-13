@@ -1,5 +1,5 @@
 <?php
-
+// Configuration settings
 $config = [
     'database' => [
         'host' => 'localhost',
@@ -24,8 +24,9 @@ $conn = new mysqli(
 
 // Check for connection errors
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    die("Database connection failed: " . $conn->connect_error);
 }
 
 // Return the connection object
 return $conn;
+?>

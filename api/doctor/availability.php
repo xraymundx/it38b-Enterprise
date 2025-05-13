@@ -2,10 +2,10 @@
 session_start();
 require_once '../../config/config.php';
 
-// Check if user is logged in and is a nurse or admin
+// Check if user is logged in and has the required role
 if (
     !isset($_SESSION['user_id']) || !isset($_SESSION['role']) ||
-    ($_SESSION['role'] !== 'nurse' && $_SESSION['role'] !== 'administrator')
+    ($_SESSION['role'] !== 'nurse' && $_SESSION['role'] !== 'administrator' && $_SESSION['role'] !== 'patient')
 ) {
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized - Insufficient privileges']);
@@ -27,8 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $dayOfWeek = date('l', strtotime($date));
 
     // Check if there's an exception for this date
-    $exceptionQuery = "SELECT * FROM doctor_availability_exceptions 
-                      WHERE doctor_id = ? AND exception_date = ?";
+    $exceptionQuery = "SELECT * FROM doctor_availability_exceptions
+                            WHERE doctor_id = ? AND exception_date = ?";
     $exceptionStmt = mysqli_prepare($conn, $exceptionQuery);
     mysqli_stmt_bind_param($exceptionStmt, "is", $doctor_id, $date);
     mysqli_stmt_execute($exceptionStmt);
@@ -69,8 +69,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
 
     // If no exception or exception with default hours, check regular schedule
-    $scheduleQuery = "SELECT * FROM doctor_schedule 
-                     WHERE doctor_id = ? AND day_of_week = ?";
+    $scheduleQuery = "SELECT * FROM doctor_schedule
+                            WHERE doctor_id = ? AND day_of_week = ?";
     $scheduleStmt = mysqli_prepare($conn, $scheduleQuery);
     mysqli_stmt_bind_param($scheduleStmt, "is", $doctor_id, $dayOfWeek);
     mysqli_stmt_execute($scheduleStmt);
@@ -137,8 +137,8 @@ else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         // Check if an exception already exists for this date
-        $checkQuery = "SELECT id FROM doctor_availability_exceptions 
-                      WHERE doctor_id = ? AND exception_date = ?";
+        $checkQuery = "SELECT id FROM doctor_availability_exceptions
+                            WHERE doctor_id = ? AND exception_date = ?";
         $checkStmt = mysqli_prepare($conn, $checkQuery);
         mysqli_stmt_bind_param($checkStmt, "is", $doctor_id, $date);
         mysqli_stmt_execute($checkStmt);
@@ -149,9 +149,9 @@ else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $exception = mysqli_fetch_assoc($checkResult);
             $id = $exception['id'];
 
-            $updateQuery = "UPDATE doctor_availability_exceptions 
-                          SET is_available = ?, notes = ? 
-                          WHERE id = ?";
+            $updateQuery = "UPDATE doctor_availability_exceptions
+                                SET is_available = ?, notes = ?
+                                WHERE id = ?";
             $updateStmt = mysqli_prepare($conn, $updateQuery);
             mysqli_stmt_bind_param($updateStmt, "isi", $is_available, $notes, $id);
 
@@ -160,9 +160,9 @@ else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } else {
             // Insert new exception
-            $insertQuery = "INSERT INTO doctor_availability_exceptions 
-                          (doctor_id, exception_date, is_available, notes) 
-                          VALUES (?, ?, ?, ?)";
+            $insertQuery = "INSERT INTO doctor_availability_exceptions
+                                (doctor_id, exception_date, is_available, notes)
+                                VALUES (?, ?, ?, ?)";
             $insertStmt = mysqli_prepare($conn, $insertQuery);
             mysqli_stmt_bind_param($insertStmt, "isis", $doctor_id, $date, $is_available, $notes);
 
@@ -198,8 +198,8 @@ else if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     }
 
     try {
-        $deleteQuery = "DELETE FROM doctor_availability_exceptions 
-                      WHERE doctor_id = ? AND exception_date = ?";
+        $deleteQuery = "DELETE FROM doctor_availability_exceptions
+                            WHERE doctor_id = ? AND exception_date = ?";
         $deleteStmt = mysqli_prepare($conn, $deleteQuery);
         mysqli_stmt_bind_param($deleteStmt, "is", $doctor_id, $date);
 
@@ -244,11 +244,11 @@ function generateTimeSlots($start_time, $end_time)
 // Get existing appointments for a doctor on a specific date
 function getExistingAppointments($conn, $doctor_id, $date)
 {
-    $appointmentsQuery = "SELECT appointment_datetime 
-                         FROM appointments 
-                         WHERE doctor_id = ? 
-                         AND DATE(appointment_datetime) = ? 
-                         AND status NOT IN ('Cancelled', 'No Show')";
+    $appointmentsQuery = "SELECT appointment_datetime
+                                FROM appointments
+                                WHERE doctor_id = ?
+                                AND DATE(appointment_datetime) = ?
+                                AND status NOT IN ('Cancelled', 'No Show')";
     $appointmentsStmt = mysqli_prepare($conn, $appointmentsQuery);
     mysqli_stmt_bind_param($appointmentsStmt, "is", $doctor_id, $date);
     mysqli_stmt_execute($appointmentsStmt);
