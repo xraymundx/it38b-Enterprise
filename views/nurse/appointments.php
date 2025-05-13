@@ -324,7 +324,8 @@
         <div class="appointment-requests">
             <div class="appointment-requests-header">
                 <h3>Appointment Requests</h3>
-                <a href="appointments_all.php" class="view-all-button">View all</a>
+                <a href="/it38b-Enterprise/routes/dashboard_router.php?page=appointments&status=all"
+                    class="view-all-button">View all</a>
             </div>
             <ul class="appointment-requests-list">
             </ul>
