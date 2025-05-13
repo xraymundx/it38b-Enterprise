@@ -1,35 +1,7 @@
 <?php
-require_once __DIR__ . '../../config/config.php';
-require_once __DIR__ . '../../functions/auth_patient.php';
+require '../config/config.php';
+require_once __DIR__ . '/../../config/config.php';
 
-// Ensure patient is logged in
-if (!is_patient_logged_in()) {
-    header('Location: /it38b-Enterprise/login.php'); // Adjust login path as needed
-    exit();
-}
-
-// Fetch patient data
-$userId = $_SESSION['user_id'];
-$patient = get_patient_details($userId); // You'll need to create this function
-
-if (!$patient) {
-    // Handle case where patient data is not found
-    echo '<div class="p-4"><div class="bg-white rounded-lg shadow p-6"><p class="text-red-500">Patient data not found.</p></div></div>';
-    exit();
-}
-
-// Handle form submission (if any)
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $updateSuccess = update_patient_profile($_POST, $patient['patient_id']); // You'll need to create this function
-
-    if ($updateSuccess) {
-        $successMessage = "Profile updated successfully!";
-        // Optionally, refresh patient data here
-        $patient = get_patient_details($userId);
-    } else {
-        $errorMessage = "Error updating profile. Please try again.";
-    }
-}
 
 ?>
 
@@ -49,26 +21,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
             <h1 class="text-2xl font-bold text-gray-800 mb-6">Patient Settings</h1>
 
-            <?php if (isset($successMessage)): ?>
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4"
-                    role="alert">
-                    <strong class="font-bold">Success!</strong>
-                    <span class="block sm:inline"><?php echo $successMessage; ?></span>
-                </div>
-            <?php endif; ?>
+            <div id="settings-message" class="mb-4">
+            </div>
 
-            <?php if (isset($errorMessage)): ?>
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                    <strong class="font-bold">Error!</strong>
-                    <span class="block sm:inline"><?php echo $errorMessage; ?></span>
-                </div>
-            <?php endif; ?>
-
-            <form method="post" class="grid grid-cols-1 gap-6">
+            <form id="patient-settings-form" class="grid grid-cols-1 gap-6">
                 <div>
                     <label for="date_of_birth" class="block text-gray-700 text-sm font-bold mb-2">Date of Birth:</label>
                     <input type="date" id="date_of_birth" name="date_of_birth"
-                        value="<?php echo htmlspecialchars($patient['date_of_birth'] ?? ''); ?>"
                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                 </div>
 
@@ -77,29 +36,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <select id="gender" name="gender"
                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                         <option value="">Select Gender</option>
-                        <option value="Male" <?php echo (isset($patient['gender']) && $patient['gender'] === 'Male') ? 'selected' : ''; ?>>Male</option>
-                        <option value="Female" <?php echo (isset($patient['gender']) && $patient['gender'] === 'Female') ? 'selected' : ''; ?>>Female</option>
-                        <option value="Other" <?php echo (isset($patient['gender']) && $patient['gender'] === 'Other') ? 'selected' : ''; ?>>Other</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
                     </select>
                 </div>
 
                 <div>
                     <label for="description" class="block text-gray-700 text-sm font-bold mb-2">Description:</label>
                     <textarea id="description" name="description"
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"><?php echo htmlspecialchars($patient['description'] ?? ''); ?></textarea>
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
                 </div>
 
                 <div>
                     <label for="address" class="block text-gray-700 text-sm font-bold mb-2">Address:</label>
                     <textarea id="address" name="address"
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"><?php echo htmlspecialchars($patient['address'] ?? ''); ?></textarea>
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
                 </div>
 
                 <div>
                     <label for="medical_record_number" class="block text-gray-700 text-sm font-bold mb-2">Medical Record
                         Number:</label>
                     <input type="text" id="medical_record_number" name="medical_record_number"
-                        value="<?php echo htmlspecialchars($patient['medical_record_number'] ?? ''); ?>"
                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                 </div>
 
@@ -107,7 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="insurance_provider" class="block text-gray-700 text-sm font-bold mb-2">Insurance
                         Provider:</label>
                     <input type="text" id="insurance_provider" name="insurance_provider"
-                        value="<?php echo htmlspecialchars($patient['insurance_provider'] ?? ''); ?>"
                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                 </div>
 
@@ -115,7 +72,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="insurance_policy_number" class="block text-gray-700 text-sm font-bold mb-2">Insurance
                         Policy Number:</label>
                     <input type="text" id="insurance_policy_number" name="insurance_policy_number"
-                        value="<?php echo htmlspecialchars($patient['insurance_policy_number'] ?? ''); ?>"
                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                 </div>
 
@@ -123,7 +79,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="emergency_contact_name" class="block text-gray-700 text-sm font-bold mb-2">Emergency
                         Contact Name:</label>
                     <input type="text" id="emergency_contact_name" name="emergency_contact_name"
-                        value="<?php echo htmlspecialchars($patient['emergency_contact_name'] ?? ''); ?>"
                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                 </div>
 
@@ -131,14 +86,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="emergency_contact_phone" class="block text-gray-700 text-sm font-bold mb-2">Emergency
                         Contact Phone:</label>
                     <input type="text" id="emergency_contact_phone" name="emergency_contact_phone"
-                        value="<?php echo htmlspecialchars($patient['emergency_contact_phone'] ?? ''); ?>"
                         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                 </div>
 
                 <div>
                     <label for="notes" class="block text-gray-700 text-sm font-bold mb-2">Notes:</label>
                     <textarea id="notes" name="notes"
-                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"><?php echo htmlspecialchars($patient['notes'] ?? ''); ?></textarea>
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
                 </div>
 
                 <div>
@@ -155,6 +109,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            loadPatientSettings();
+
+            const settingsForm = document.getElementById('patient-settings-form');
+            settingsForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                updatePatientSettings();
+            });
+        });
+
+        async function loadPatientSettings() {
+            try {
+                const response = await fetch('/it38b-Enterprise/api/patient/settings.php?action=view');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.success && data.patient) {
+                    populateForm(data.patient);
+                } else {
+                    displayMessage('error', data.error || 'Failed to load settings.');
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+                displayMessage('error', 'Failed to load settings. Please try again.');
+            }
+        }
+
+        function populateForm(patient) {
+            document.getElementById('date_of_birth').value = patient.date_of_birth || '';
+            document.getElementById('gender').value = patient.gender || '';
+            document.getElementById('description').value = patient.description || '';
+            document.getElementById('address').value = patient.address || '';
+            document.getElementById('medical_record_number').value = patient.medical_record_number || '';
+            document.getElementById('insurance_provider').value = patient.insurance_provider || '';
+            document.getElementById('insurance_policy_number').value = patient.insurance_policy_number || '';
+            document.getElementById('emergency_contact_name').value = patient.emergency_contact_name || '';
+            document.getElementById('emergency_contact_phone').value = patient.emergency_contact_phone || '';
+            document.getElementById('notes').value = patient.notes || '';
+        }
+
+        async function updatePatientSettings() {
+            const formData = new FormData(document.getElementById('patient-settings-form'));
+
+            try {
+                const response = await fetch('/it38b-Enterprise/api/patient/settings.php?action=update', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayMessage(data.success ? 'success' : 'error', data.message || data.error || 'Update failed.');
+
+            } catch (error) {
+                console.error('Error updating settings:', error);
+                displayMessage('error', 'Failed to update settings. Please try again.');
+            }
+        }
+
+        function displayMessage(type, message) {
+            const messageDiv = document.getElementById('settings-message');
+            messageDiv.innerHTML = `<div class="${type === 'success' ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-red-100 border border-red-400 text-red-700'} px-4 py-3 rounded relative" role="alert">
+                <strong class="font-bold">${type === 'success' ? 'Success!' : 'Error!'}</strong>
+                <span class="block sm:inline">${message}</span>
+            </div>`;
+            // Optionally clear the message after a few seconds
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 5000);
+        }
+    </script>
 </body>
 
 </html>

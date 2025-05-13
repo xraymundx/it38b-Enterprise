@@ -491,9 +491,7 @@ $view = $_GET['view'] ?? '';
             <a href="?page=billing_records" class="sidenav-item">
                 <span class="material-symbols-outlined">receipt</span> Billing Records
             </a>
-            <a href="?page=settings" class="sidenav-item">
-                <span class="material-symbols-outlined">settings</span> Settings
-            </a>
+
         </div>
         <div class="sidenav-footer">
             <div class="user-info">
