@@ -25,10 +25,10 @@ $specializations = mysqli_fetch_all($specializationsResult, MYSQLI_ASSOC);
 
 // Fetch all doctors with their user information and specialization
 $doctorsQuery = "SELECT d.doctor_id, u.user_id, u.username, u.email, u.first_name, u.last_name, s.specialization_name
-                 FROM doctors d
-                 JOIN users u ON d.user_id = u.user_id
-                 JOIN specializations s ON d.specialization_id = s.specialization_id
-                 ORDER BY u.last_name, u.first_name";
+                    FROM doctors d
+                    JOIN users u ON d.user_id = u.user_id
+                    JOIN specializations s ON d.specialization_id = s.specialization_id
+                    ORDER BY u.last_name, u.first_name";
 $doctorsResult = mysqli_query($conn, $doctorsQuery);
 $doctors = mysqli_fetch_all($doctorsResult, MYSQLI_ASSOC);
 
@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_doctor'])) {
     $lastName = mysqli_real_escape_string($conn, $_POST['last_name']);
     $roleId = 2; // Assuming '2' is the role_id for 'doctor'
     $specializationId = isset($_POST['specialization_id']) ? intval($_POST['specialization_id']) : null;
-    $availabilityTimes = $_POST['availability'] ?? [];
+    $availabilityDays = $_POST['availability'] ?? [];
 
     // Validate inputs (add more robust validation as needed)
     if (empty($username) || empty($email) || empty($password) || empty($firstName) || empty($lastName) || !is_numeric($specializationId)) {
@@ -49,9 +49,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_doctor'])) {
     } else {
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
+        // Begin transaction
+        mysqli_begin_transaction($conn);
+        $error = false;
+
         // Insert user into the users table
         $insertUserQuery = "INSERT INTO users (username, email, password_hash, first_name, last_name, role_id)
-                            VALUES ('$username', '$email', '$passwordHash', '$firstName', '$lastName', $roleId)";
+                                    VALUES ('$username', '$email', '$passwordHash', '$firstName', '$lastName', $roleId)";
 
         if (mysqli_query($conn, $insertUserQuery)) {
             $newUserId = mysqli_insert_id($conn);
@@ -61,24 +65,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_doctor'])) {
             if (mysqli_query($conn, $insertDoctorQuery)) {
                 $newDoctorId = mysqli_insert_id($conn);
 
-                // Insert availability times
-                foreach ($availabilityTimes as $day => $times) {
-                    if (is_array($times) && isset($times['start_time']) && isset($times['end_time']) && !empty($times['start_time']) && !empty($times['end_time'])) {
-                        $startTime = mysqli_real_escape_string($conn, $times['start_time']);
-                        $endTime = mysqli_real_escape_string($conn, $times['end_time']);
-                        $insertAvailabilityQuery = "INSERT INTO doctor_schedule (doctor_id, day_of_week, start_time, end_time)
-                                                    VALUES ($newDoctorId, '$day', '$startTime', '$endTime')";
-                        mysqli_query($conn, $insertAvailabilityQuery);
+                // Define fixed start and end times for availability
+                $fixedStartTimeFormatted = '07:00:00';
+                $fixedEndTimeFormatted = '18:00:00';
+
+                // Insert a single availability record for each selected day
+                foreach ($availabilityDays as $day) {
+                    $insertAvailabilityQuery = "INSERT INTO doctor_schedule (doctor_id, day_of_week, start_time, end_time)
+                                                    VALUES ($newDoctorId, '$day', '$fixedStartTimeFormatted', '$fixedEndTimeFormatted')";
+                    if (!mysqli_query($conn, $insertAvailabilityQuery)) {
+                        $error = true;
+                        $errorMessage = "Error adding availability: " . mysqli_error($conn);
+                        break;
                     }
                 }
 
-                $successMessage = "Doctor added successfully!";
+                if (!$error) {
+                    mysqli_commit($conn);
+                    $successMessage = "Doctor added successfully with availability from 7:00 AM to 6:00 PM on selected days!";
+                } else {
+                    mysqli_rollback($conn);
+                    // $errorMessage is already set within the loop
+                    mysqli_query($conn, "DELETE FROM doctors WHERE doctor_id = $newDoctorId");
+                    mysqli_query($conn, "DELETE FROM users WHERE user_id = $newUserId");
+                }
+
             } else {
+                mysqli_rollback($conn);
                 $errorMessage = "Error adding doctor details: " . mysqli_error($conn);
-                // Optionally delete the user if doctor insertion fails
                 mysqli_query($conn, "DELETE FROM users WHERE user_id = $newUserId");
             }
         } else {
+            mysqli_rollback($conn);
             $errorMessage = "Error adding user: " . mysqli_error($conn);
         }
     }
@@ -305,116 +323,55 @@ if (isset($_GET['delete_id']) && is_numeric($_GET['delete_id'])) {
                         <div>
                             <label
                                 class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Availability</label>
-                            <div id="availability-fields">
-                                <div class="flex space-x-4 mb-2">
-                                    <select name="availability[monday][start_time]"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                        <option value="">Monday Start Time</option>
-                                        <?php for ($i = 7; $i <= 18; $i++): ?>
-                                            <option value="<?php echo sprintf('%02d:00', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:00', $i))); ?></option>
-                                            <option value="<?php echo sprintf('%02d:30', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:30', $i))); ?></option>
-                                        <?php endfor; ?>
-                                    </select>
-                                    <select name="availability[monday][end_time]"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                        <option value="">Monday End Time</option>
-                                        <?php for ($i = 7; $i <= 18; $i++): ?>
-                                            <option value="<?php echo sprintf('%02d:00', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:00', $i))); ?></option>
-                                            <option value="<?php echo sprintf('%02d:30', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:30', $i))); ?></option>
-                                        <?php endfor; ?>
-                                    </select>
+                            <div class="flex flex-col space-y-2">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="monday" name="availability[]" value="Monday"
+                                        class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                    <label for="monday"
+                                        class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">Monday
+                                        (7:00 AM - 6:00 PM)</label>
                                 </div>
-                                <div class="flex space-x-4 mb-2">
-                                    <select name="availability[tuesday][start_time]"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                        <option value="">Tuesday Start Time</option>
-                                        <?php for ($i = 7; $i <= 18; $i++): ?>
-                                            <option value="<?php echo sprintf('%02d:00', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:00', $i))); ?></option>
-                                            <option value="<?php echo sprintf('%02d:30', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:30', $i))); ?></option>
-                                        <?php endfor; ?>
-                                    </select>
-                                    <select name="availability[tuesday][end_time]"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                        <option value="">Tuesday End Time</option>
-                                        <?php for ($i = 7; $i <= 18; $i++): ?>
-                                            <option value="<?php echo sprintf('%02d:00', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:00', $i))); ?></option>
-                                            <option value="<?php echo sprintf('%02d:30', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:30', $i))); ?></option>
-                                        <?php endfor; ?>
-                                    </select>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="tuesday" name="availability[]" value="Tuesday"
+                                        class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                    <label for="tuesday"
+                                        class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">Tuesday
+                                        (7:00 AM - 6:00 PM)</label>
                                 </div>
-                                <div class="flex space-x-4 mb-2">
-                                    <select name="availability[wednesday][start_time]"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                        <option value="">Wednesday Start Time</option>
-                                        <?php for ($i = 7; $i <= 18; $i++): ?>
-                                            <option value="<?php echo sprintf('%02d:00', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:00', $i))); ?></option>
-                                            <option value="<?php echo sprintf('%02d:30', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:30', $i))); ?></option>
-                                        <?php endfor; ?>
-                                    </select>
-                                    <select name="availability[wednesday][end_time]"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                        <option value="">Wednesday End Time</option>
-                                        <?php for ($i = 7; $i <= 18; $i++): ?>
-                                            <option value="<?php echo sprintf('%02d:00', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:00', $i))); ?></option>
-                                            <option value="<?php echo sprintf('%02d:30', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:30', $i))); ?></option>
-                                        <?php endfor; ?>
-                                    </select>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="wednesday" name="availability[]" value="Wednesday"
+                                        class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                    <label for="wednesday"
+                                        class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">Wednesday
+                                        (7:00 AM - 6:00 PM)</label>
                                 </div>
-                                <div class="flex space-x-4 mb-2">
-                                    <select name="availability[thursday][start_time]"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                        <option value="">Thursday Start Time</option>
-                                        <?php for ($i = 7; $i <= 18; $i++): ?>
-                                            <option value="<?php echo sprintf('%02d:00', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:00', $i))); ?></option>
-                                            <option value="<?php echo sprintf('%02d:30', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:30', $i))); ?></option>
-                                        <?php endfor; ?>
-                                    </select>
-                                    <select name="availability[thursday][end_time]"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                        <option value="">Thursday End Time</option>
-                                        <?php for ($i = 7; $i <= 18; $i++): ?>
-                                            <option value="<?php echo sprintf('%02d:00', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:00', $i))); ?></option>
-                                            <option value="<?php echo sprintf('%02d:30', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:30', $i))); ?></option>
-                                        <?php endfor; ?>
-                                    </select>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="thursday" name="availability[]" value="Thursday"
+                                        class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                    <label for="thursday"
+                                        class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">Thursday
+                                        (7:00 AM - 6:00 PM)</label>
                                 </div>
-                                <div class="flex space-x-4 mb-2">
-                                    <select name="availability[friday][start_time]"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                        <option value="">Friday Start Time</option>
-                                        <?php for ($i = 7; $i <= 18; $i++): ?>
-                                            <option value="<?php echo sprintf('%02d:00', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:00', $i))); ?></option>
-                                            <option value="<?php echo sprintf('%02d:30', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:30', $i))); ?></option>
-                                        <?php endfor; ?>
-                                    </select>
-                                    <select name="availability[friday][end_time]"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                        <option value="">Friday End Time</option>
-                                        <?php for ($i = 7; $i <= 18; $i++): ?>
-                                            <option value="<?php echo sprintf('%02d:00', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:00', $i))); ?></option>
-                                            <option value="<?php echo sprintf('%02d:30', $i); ?>">
-                                                <?php echo date('h:i A', strtotime(sprintf('%02d:30', $i))); ?></option>
-                                        <?php endfor; ?>
-                                    </select>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="friday" name="availability[]" value="Friday"
+                                        class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                    <label for="friday"
+                                        class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">Friday
+                                        (7:00 AM - 6:00 PM)</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="saturday" name="availability[]" value="Saturday"
+                                        class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                    <label for="saturday"
+                                        class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">Saturday
+                                        (7:00 AM - 6:00 PM)</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="sunday" name="availability[]" value="Sunday"
+                                        class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800">
+                                    <label for="sunday"
+                                        class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">Sunday
+                                        (7:00 AM - 6:00 PM)</label>
                                 </div>
                             </div>
                         </div>
@@ -429,9 +386,7 @@ if (isset($_GET['delete_id']) && is_numeric($_GET['delete_id'])) {
     </div>
 
     <script>
-        // JavaScript to handle dynamic availability fields (if needed)
-        // For now, the basic structure for each day is included directly in the HTML.
-        // You can enhance this with JavaScript to add/remove availability slots per day if required.
+        // No dynamic availability fields needed in this version
     </script>
 </body>
 

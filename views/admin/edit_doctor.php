@@ -22,9 +22,9 @@ $doctorId = intval($_GET['id']);
 
 // Fetch doctor details
 $doctorQuery = "SELECT d.doctor_id, u.user_id, u.username, u.email, u.first_name, u.last_name, d.specialization_id
-                FROM doctors d
-                JOIN users u ON d.user_id = u.user_id
-                WHERE d.doctor_id = $doctorId";
+                    FROM doctors d
+                    JOIN users u ON d.user_id = u.user_id
+                    WHERE d.doctor_id = $doctorId";
 $doctorResult = mysqli_query($conn, $doctorQuery);
 $doctor = mysqli_fetch_assoc($doctorResult);
 
@@ -43,15 +43,12 @@ $specializationsQuery = "SELECT specialization_id, specialization_name FROM spec
 $specializationsResult = mysqli_query($conn, $specializationsQuery);
 $specializations = mysqli_fetch_all($specializationsResult, MYSQLI_ASSOC);
 
-// Fetch current availability for the doctor
-$availabilityQuery = "SELECT day_of_week, start_time, end_time FROM doctor_schedule WHERE doctor_id = $doctorId";
+// Fetch current availability for the doctor (to pre-check checkboxes)
+$availabilityQuery = "SELECT day_of_week FROM doctor_schedule WHERE doctor_id = $doctorId";
 $availabilityResult = mysqli_query($conn, $availabilityQuery);
-$currentAvailability = [];
+$currentAvailabilityDays = [];
 while ($row = mysqli_fetch_assoc($availabilityResult)) {
-    $currentAvailability[$row['day_of_week']][] = [
-        'start_time' => $row['start_time'],
-        'end_time' => $row['end_time'],
-    ];
+    $currentAvailabilityDays[] = strtolower($row['day_of_week']);
 }
 
 // Handle form submission for updating doctor details
@@ -62,63 +59,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_doctor'])) {
     $firstName = mysqli_real_escape_string($conn, $_POST['first_name']);
     $lastName = mysqli_real_escape_string($conn, $_POST['last_name']);
     $specializationId = isset($_POST['specialization_id']) ? intval($_POST['specialization_id']) : null;
-    $availabilityTimes = $_POST['availability'] ?? [];
+    $availabilityDays = $_POST['availability'] ?? [];
 
     // Validate inputs (add more robust validation as needed)
     if (empty($username) || empty($email) || empty($firstName) || empty($lastName) || !is_numeric($specializationId)) {
         $errorMessage = "All fields are required.";
     } else {
+        // Begin transaction
+        mysqli_begin_transaction($conn);
+        $error = false;
+
         // Update user information
         $updateUserQuery = "UPDATE users SET
-                            username = '$username',
-                            email = '$email',
-                            first_name = '$firstName',
-                            last_name = '$lastName'
-                            WHERE user_id = $userId";
+                                    username = '$username',
+                                    email = '$email',
+                                    first_name = '$firstName',
+                                    last_name = '$lastName'
+                                    WHERE user_id = $userId";
 
         if (mysqli_query($conn, $updateUserQuery)) {
             // Update doctor's specialization
             $updateDoctorQuery = "UPDATE doctors SET
-                                specialization_id = $specializationId
-                                WHERE doctor_id = $doctorId";
+                                        specialization_id = $specializationId
+                                        WHERE doctor_id = $doctorId";
 
             if (mysqli_query($conn, $updateDoctorQuery)) {
                 // Clear existing availability
                 $deleteAvailabilityQuery = "DELETE FROM doctor_schedule WHERE doctor_id = $doctorId";
                 mysqli_query($conn, $deleteAvailabilityQuery);
 
-                // Insert new availability times
-                foreach ($availabilityTimes as $day => $times) {
-                    if (is_array($times)) {
-                        foreach ($times as $timeSlot) {
-                            if (isset($timeSlot['start_time']) && isset($timeSlot['end_time']) && !empty($timeSlot['start_time']) && !empty($timeSlot['end_time'])) {
-                                $startTime = mysqli_real_escape_string($conn, $timeSlot['start_time']);
-                                $endTime = mysqli_real_escape_string($conn, $timeSlot['end_time']);
-                                $insertAvailabilityQuery = "INSERT INTO doctor_schedule (doctor_id, day_of_week, start_time, end_time)
-                                                            VALUES ($doctorId, '$day', '$startTime', '$endTime')";
-                                mysqli_query($conn, $insertAvailabilityQuery);
-                            }
-                        }
+                // Define fixed start and end times for availability
+                $fixedStartTimeFormatted = '07:00:00';
+                $fixedEndTimeFormatted = '18:00:00';
+
+                // Insert new availability records for selected days
+                foreach ($availabilityDays as $day) {
+                    $insertAvailabilityQuery = "INSERT INTO doctor_schedule (doctor_id, day_of_week, start_time, end_time)
+                                                    VALUES ($doctorId, '$day', '$fixedStartTimeFormatted', '$fixedEndTimeFormatted')";
+                    if (!mysqli_query($conn, $insertAvailabilityQuery)) {
+                        $error = true;
+                        $errorMessage = "Error updating availability: " . mysqli_error($conn);
+                        break;
                     }
                 }
 
-                $successMessage = "Doctor information updated successfully!";
-                // Refresh doctor data after update
-                $doctorResult = mysqli_query($conn, $doctorQuery);
-                $doctor = mysqli_fetch_assoc($doctorResult);
-                $availabilityResult = mysqli_query($conn, $availabilityQuery);
-                $currentAvailability = [];
-                while ($row = mysqli_fetch_assoc($availabilityResult)) {
-                    $currentAvailability[$row['day_of_week']][] = [
-                        'start_time' => $row['start_time'],
-                        'end_time' => $row['end_time'],
-                    ];
+                if (!$error) {
+                    mysqli_commit($conn);
+                    $successMessage = "Doctor information and availability updated successfully to 7:00 AM - 6:00 PM on selected days!";
+                } else {
+                    mysqli_rollback($conn);
+                    // $errorMessage is already set within the loop
                 }
+
             } else {
+                mysqli_rollback($conn);
                 $errorMessage = "Error updating doctor details: " . mysqli_error($conn);
             }
         } else {
+            mysqli_rollback($conn);
             $errorMessage = "Error updating user information: " . mysqli_error($conn);
+        }
+
+        // Refresh current availability after update attempt
+        $availabilityResult = mysqli_query($conn, $availabilityQuery);
+        $currentAvailabilityDays = [];
+        while ($row = mysqli_fetch_assoc($availabilityResult)) {
+            $currentAvailabilityDays[] = strtolower($row['day_of_week']);
         }
     }
 }
@@ -204,80 +210,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_doctor'])) {
                     </select>
                 </div>
                 <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Availability</label>
-                    <div id="availability-fields">
-                        <?php
-                        $daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-                        foreach ($daysOfWeek as $day):
-                            ?>
-                            <div class="mb-4 border-b pb-2">
-                                <label
-                                    class="block text-sm font-medium text-gray-700 capitalize"><?php echo ucfirst($day); ?></label>
-                                <?php if (isset($currentAvailability[$day])): ?>
-                                    <?php foreach ($currentAvailability[$day] as $index => $slot): ?>
-                                        <div class="flex space-x-4 mb-2">
-                                            <select name="availability[<?php echo $day; ?>][<?php echo $index; ?>][start_time]"
-                                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                                <option value="">Start Time</option>
-                                                <?php for ($i = 0; $i < 24; $i++): ?>
-                                                    <?php for ($j = 0; $j < 60; $j += 30): ?>
-                                                        <?php $time = sprintf('%02d:%02d', $i, $j); ?>
-                                                        <option value="<?php echo $time; ?>" <?php if ($slot['start_time'] == $time)
-                                                               echo 'selected'; ?>><?php echo date('h:i A', strtotime($time)); ?></option>
-                                                    <?php endfor; ?>
-                                                <?php endfor; ?>
-                                            </select>
-                                            <select name="availability[<?php echo $day; ?>][<?php echo $index; ?>][end_time]"
-                                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                                <option value="">End Time</option>
-                                                <?php for ($i = 0; $i < 24; $i++): ?>
-                                                    <?php for ($j = 0; $j < 60; $j += 30): ?>
-                                                        <?php $time = sprintf('%02d:%02d', $i, $j); ?>
-                                                        <option value="<?php echo $time; ?>" <?php if ($slot['end_time'] == $time)
-                                                               echo 'selected'; ?>><?php echo date('h:i A', strtotime($time)); ?></option>
-                                                    <?php endfor; ?>
-                                                <?php endfor; ?>
-                                            </select>
-                                            <button type="button" class="text-red-500 hover:text-red-700 remove-time-slot">
-                                                <span class="material-symbols-outlined">delete</span>
-                                            </button>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <div class="flex space-x-4 mb-2">
-                                        <select name="availability[<?php echo $day; ?>][0][start_time]"
-                                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                            <option value="">Start Time</option>
-                                            <?php for ($i = 0; $i < 24; $i++): ?>
-                                                <?php for ($j = 0; $j < 60; $j += 30): ?>
-                                                    <?php $time = sprintf('%02d:%02d', $i, $j); ?>
-                                                    <option value="<?php echo $time; ?>"><?php echo date('h:i A', strtotime($time)); ?>
-                                                    </option>
-                                                <?php endfor; ?>
-                                            <?php endfor; ?>
-                                        </select>
-                                        <select name="availability[<?php echo $day; ?>][0][end_time]"
-                                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                            <option value="">End Time</option>
-                                            <?php for ($i = 0; $i < 24; $i++): ?>
-                                                <?php for ($j = 0; $j < 60; $j += 30): ?>
-                                                    <?php $time = sprintf('%02d:%02d', $i, $j); ?>
-                                                    <option value="<?php echo $time; ?>"><?php echo date('h:i A', strtotime($time)); ?>
-                                                    </option>
-                                                <?php endfor; ?>
-                                            <?php endfor; ?>
-                                        </select>
-                                        <button type="button" class="text-green-500 hover:text-green-700 add-time-slot"
-                                            data-day="<?php echo $day; ?>">
-                                            <span class="material-symbols-outlined">add</span>
-                                        </button>
-                                    </div>
-                                <?php endif; ?>
-                                <div id="additional-slots-<?php echo $day; ?>">
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
+                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Availability (7:00 AM -
+                        6:00 PM)</label>
+                    <div class="flex flex-col space-y-2">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="monday" name="availability[]" value="Monday"
+                                class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+                                <?php if (in_array('monday', $currentAvailabilityDays))
+                                    echo 'checked'; ?>>
+                            <label for="monday"
+                                class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">Monday</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="tuesday" name="availability[]" value="Tuesday"
+                                class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+                                <?php if (in_array('tuesday', $currentAvailabilityDays))
+                                    echo 'checked'; ?>>
+                            <label for="tuesday"
+                                class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">Tuesday</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="wednesday" name="availability[]" value="Wednesday"
+                                class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+                                <?php if (in_array('wednesday', $currentAvailabilityDays))
+                                    echo 'checked'; ?>>
+                            <label for="wednesday"
+                                class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">Wednesday</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="thursday" name="availability[]" value="Thursday"
+                                class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+                                <?php if (in_array('thursday', $currentAvailabilityDays))
+                                    echo 'checked'; ?>>
+                            <label for="thursday"
+                                class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">Thursday</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="friday" name="availability[]" value="Friday"
+                                class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+                                <?php if (in_array('friday', $currentAvailabilityDays))
+                                    echo 'checked'; ?>>
+                            <label for="friday"
+                                class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">Friday</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="saturday" name="availability[]" value="Saturday"
+                                class="w-4 h-4 border border-gray-300 roundedbg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+                                <?php if (in_array('saturday', $currentAvailabilityDays))
+                                    echo 'checked'; ?>>
+                            <label for="saturday"
+                                class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">Saturday</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="sunday" name="availability[]" value="Sunday"
+                                class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+                                <?php if (in_array('sunday', $currentAvailabilityDays))
+                                    echo 'checked'; ?>>
+                            <label for="sunday"
+                                class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 capitalize">Sunday</label>
+                        </div>
                     </div>
+                    <p class="text-sm text-gray-500 mt-2">Select the days the doctor is available from 7:00 AM to 6:00
+                        PM.</p>
                 </div>
                 <button type="submit"
                     class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
@@ -291,47 +285,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_doctor'])) {
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const availabilityFields = document.getElementById('availability-fields');
-            const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-
-            availabilityFields.addEventListener('click', function (event) {
-                if (event.target.classList.contains('add-time-slot')) {
-                    const day = event.target.getAttribute('data-day');
-                    const container = document.getElementById(`additional-slots-${day}`);
-                    const index = container.children.length;
-
-                    const newSlot = document.createElement('div');
-                    newSlot.classList.add('flex', 'space-x-4', 'mb-2');
-                    newSlot.innerHTML = `
-                        <select name="availability[${day}][${index}][start_time]" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                            <option value="">Start Time</option>
-                            <?php for ($i = 0; $i < 24; $i++): ?>
-                                <?php for ($j = 0; $j < 60; $j += 30): ?>
-                                    <?php $time = sprintf('%02d:%02d', $i, $j); ?>
-                                    <option value="<?php echo $time; ?>"><?php echo date('h:i A', strtotime($time)); ?></option>
-                                <?php endfor; ?>
-                            <?php endfor; ?>
-                        </select>
-                        <select name="availability[${day}][${index}][end_time]" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                            <option value="">End Time</option>
-                            <?php for ($i = 0; $i < 24; $i++): ?>
-                                <?php for ($j = 0; $j < 60; $j += 30): ?>
-                                    <?php $time = sprintf('%02d:%02d', $i, $j); ?>
-                                    <option value="<?php echo $time; ?>"><?php echo date('h:i A', strtotime($time)); ?></option>
-                                <?php endfor; ?>
-                            <?php endfor; ?>
-                        </select>
-                        <button type="button" class="text-red-500 hover:text-red-700 remove-time-slot">
-                            <span class="material-symbols-outlined">delete</span>
-                        </button>
-                    `;
-                    container.appendChild(newSlot);
-                } else if (event.target.classList.contains('remove-time-slot')) {
-                    event.target.closest('.flex').remove();
-                }
-            });
-        });
+        // No dynamic availability fields needed in this version
     </script>
 </body>
 
