@@ -43,41 +43,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Hash password
         $password_hash = password_hash($password, PASSWORD_BCRYPT);
 
-        // Map user_type to role_id
+        // Map user_type to role_id and table name
         $roleId = null;
+        $roleTable = null;
         switch ($user_type) {
             case 'patient':
-                $roleId = 4; // Example role ID for patient
+                $roleId = 4; // Role ID for patient
+                $roleTable = 'patients';
                 break;
             case 'admin':
-                $roleId = 3; // Example role ID for admin
+                $roleId = 1; // Role ID for administrator
+                $roleTable = 'admins'; // Now we have an admins table
                 break;
             case 'nurse':
-                $roleId = 1; // Example role ID for nurse
+                $roleId = 3; // Role ID for nurse
+                $roleTable = 'nurses';
                 break;
             case 'doctor':
-                $roleId = 2; // Example role ID for doctor
+                $roleId = 2; // Role ID for doctor
+                $roleTable = 'doctors';
                 break;
             default:
-                $roleId = null; // Or some default role ID
+                $roleId = null;
+                $roleTable = null;
                 break;
         }
 
-        // Insert user
+        // Start transaction to ensure data integrity
+        $conn->begin_transaction();
+
+        // Insert user into the users table
         $stmt = $conn->prepare("INSERT INTO users (username, email, first_name, last_name, phone_number, password_hash, role_id)
-                                    VALUES (?, ?, ?, ?, ?, ?, ?)");
+                                 VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("ssssssi", $username, $email, $first_name, $last_name, $phone_number, $password_hash, $roleId);
 
         if ($stmt->execute()) {
-            $success = "Registration successful! You can now <a href='login.php'>log in</a>.";
+            $user_id = $conn->insert_id; // Get the newly inserted user ID
+            $stmt->close();
+
+            // If a valid role table is identified, insert into the respective table
+            if ($roleTable) {
+                $stmt_role = $conn->prepare("INSERT INTO $roleTable (user_id) VALUES (?)");
+                $stmt_role->bind_param("i", $user_id);
+                if ($stmt_role->execute()) {
+                    $stmt_role->close();
+                    $conn->commit(); // Commit transaction if both inserts are successful
+                    $success = "Registration successful! You can now <a href='login.php'>log in</a>.";
+                } else {
+                    $conn->rollback(); // Rollback if insertion into role table fails
+                    $errors[] = "Registration failed: Could not assign user role.";
+                }
+            } else {
+                $conn->commit(); // Commit if no specific role table (shouldn't happen now with 'admin' handled)
+                $success = "Registration successful! You can now <a href='login.php'>log in</a>.";
+            }
 
             // Optionally, you could also directly save the appointment here,
             // now that the user is registered. You'd need to access the
             // $appointmentDate as well.
         } else {
+            $conn->rollback(); // Rollback if insertion into users table fails
             $errors[] = "Registration failed. Please try again.";
         }
-        $stmt->close();
     }
     $conn->close();
 }
