@@ -10,10 +10,10 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role
 
 // Fetch all doctors
 $doctorQuery = "SELECT d.doctor_id, u.first_name, u.last_name, s.specialization_name
-                    FROM doctors d
-                    JOIN users u ON d.user_id = u.user_id
-                    JOIN specializations s ON d.specialization_id = s.specialization_id
-                    ORDER BY u.last_name, u.first_name";
+                 FROM doctors d
+                 JOIN users u ON d.user_id = u.user_id
+                 JOIN specializations s ON d.specialization_id = s.specialization_id
+                 ORDER BY u.last_name, u.first_name";
 $doctorResult = mysqli_query($conn, $doctorQuery);
 
 // Fetch patient ID
@@ -181,7 +181,7 @@ if (!$patientId) {
                     patient_id: this.formData.patient_id // Include patient ID in the request
                 };
 
-                const appointmentRequestUrl = 'it38b-Enterprise/api/patient/appointments.php?action=create';
+                const appointmentRequestUrl = '/it38b-Enterprise/api/patient/appointments.php?action=create';
                 fetch(appointmentRequestUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

@@ -6,44 +6,47 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Check if user is logged in and is a doctor
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'doctor') {
-    header('Location: /login.php'); // Adjust the path as needed
+    header('Location: /login.php');
     exit();
 }
 
-require_once __DIR__ . '/../../config/config.php';
+// Get doctor information
+require_once __DIR__ . '/../../config/config.php'; // Adjust path as needed
 $user_id = $_SESSION['user_id'];
-$query = "SELECT u.first_name, u.last_name
-          FROM users u
-          JOIN doctors d ON u.user_id = d.user_id
+$query = "SELECT u.*, d.doctor_id FROM users u
+          LEFT JOIN doctors d ON u.user_id = d.user_id
           WHERE u.user_id = ?";
 $stmt = mysqli_prepare($conn, $query);
 mysqli_stmt_bind_param($stmt, "i", $user_id);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
-$doctorUser = mysqli_fetch_assoc($result);
+$doctor = mysqli_fetch_assoc($result);
 
-// Base path for including doctor-specific pages
-$base_path = ''; // Assuming your doctor pages are in the same directory
-
-// Determine the current page
-$page = $_GET['page'] ?? 'dashboard'; // Default to 'dashboard'
-
-// Array of allowed doctor pages
-$allowedPages = [
-    'dashboard',
-    'appointments',
-    'patients', // Doctors might need to view their patients
-    'profile',
-    'settings',
-    'error',
-    // Add more pages as you create them for doctors
-];
-
-if (!in_array($page, $allowedPages)) {
-    $page = 'error'; // Redirect to an error page if not allowed
+// Now you can access the doctor's ID using $doctor['doctor_id']
+if (isset($doctor['doctor_id'])) {
+    // Doctor ID is successfully retrieved
+    $doctor_id = $doctor['doctor_id'];
+    // You can store it in the session if needed
+    $_SESSION['doctor_id'] = $doctor_id;
+} else {
+    // Handle the case where doctor_id is not found (shouldn't happen if role is correctly set)
+    // You might want to log an error or redirect the user
+    error_log("Error: Doctor ID not found for user ID: " . $user_id);
+    // Optionally, redirect to an error page
+    // header("Location: /error.php");
+    // exit();
 }
 
-$pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
+// Default profile image if none is set (you might have doctor-specific defaults)
+$profile_image = !empty($doctor['profile_image']) ? $doctor['profile_image'] : 'https://via.placeholder.com/30';
+
+// Base path for including doctor-specific views
+$base_path = 'views/doctor';
+
+// Determine the current page and view
+$page = $_GET['page'] ?? 'dashboard';
+$view = $_GET['view'] ?? '';
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -96,7 +99,7 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
         }
 
         .toolbar-left h2 {
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: 600;
             margin: 0;
             font-family: 'Poppins', sans-serif;
@@ -107,7 +110,7 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
             background: none;
             border: none;
             padding: 0;
-            font-size: 1.5rem;
+            font-size: 2rem;
             color: #111827;
             cursor: pointer;
             display: flex;
@@ -130,6 +133,7 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
             gap: 8px;
             min-width: 0;
             margin-left: 1rem;
+
         }
 
         .toolbar-search input {
@@ -161,7 +165,7 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
         }
 
         .toolbar-actions .notification .material-symbols-outlined {
-            font-size: 1.5rem;
+            font-size: 2rem;
             color: #4b5563;
         }
 
@@ -172,8 +176,7 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
             height: 100%;
             width: 0;
             overflow-x: hidden;
-            background: linear-gradient(to bottom, #155e75 46%, #155e75 67%, #06b6d4 100%);
-            /* Doctor specific sidebar gradient */
+            background: linear-gradient(to bottom, #1e3a8a 46%, #1e3a8a 67%, #3b82f6 100%);
             color: white;
             transition: width 0.3s ease;
             z-index: 1001;
@@ -195,7 +198,7 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
 
         .sidenav-header h1 {
             margin: 0;
-            font-size: 1.8rem;
+            font-size: 2rem;
             color: white;
         }
 
@@ -220,8 +223,7 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
 
         .sidenav-item:hover,
         .sidenav-item.active {
-            background-color: #38bdf8;
-            /* Doctor specific active color */
+            background-color: #0ea5e9;
             color: white;
             margin-top: 2px;
             margin-bottom: 2px;
@@ -253,6 +255,35 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
             -ms-overflow-style: none;
         }
 
+        .subnav {
+            display: none;
+            flex-direction: column;
+            margin-left: 20px;
+            margin-top: 6px;
+            gap: 4px;
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            padding-left: 15px;
+        }
+
+        .subnav.open {
+            display: flex;
+        }
+
+        .subnav a {
+            text-decoration: none;
+            color: #d1d5db;
+            font-size: 0.85rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .subnav a:hover,
+        .subnav a.active {
+            background-color: #0ea5e9;
+            color: white;
+        }
+
         .sidenav-footer>*::-webkit-scrollbar {
             display: none;
         }
@@ -275,6 +306,7 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
             font-size: 0.85rem;
             color: #374151;
             font-family: 'Poppins', sans-serif;
+
         }
 
         .user-details strong {
@@ -282,6 +314,7 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
             font-weight: 500;
             color: black;
             font-family: 'Poppins', sans-serif;
+
         }
 
         .sidenav-footer-options {
@@ -301,6 +334,7 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
             border-radius: 4px;
             transition: background-color 0.15s ease-in-out;
             font-family: 'Poppins', sans-serif;
+
         }
 
         .sidenav-footer-options a:hover {
@@ -311,6 +345,7 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
         .sidenav-footer-options a .material-symbols-outlined {
             font-size: 1.1rem;
         }
+
 
         .sidenav-footer>a {
             display: none !important;
@@ -365,6 +400,7 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
 
             .toolbar-left h2 {
                 font-size: 1rem;
+
             }
 
             .toolbar-left button {
@@ -412,19 +448,19 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
             vertical-align: middle;
         }
 
-        /* Specific color for Doctor */
-        .sidenav-header h1 .doctor-site {
-            color: #06b6d4;
+        /* Specific color for MF */
+        .sidenav-header h1 .mf {
+            color: #00B4D8;
             font-size: inherit;
         }
 
-        .sidenav-header h1 .panel {
+        .sidenav-header h1 .clinic {
             color: white;
             font-size: inherit;
         }
 
         .sidenav-header h1 {
-            font-size: 1.8rem;
+            font-size: 2rem;
         }
     </style>
 </head>
@@ -435,11 +471,11 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
             <button onclick="toggleNav()">
                 <span class="material-symbols-outlined">menu</span>
             </button>
-            <h2 id="pageTitle">Doctor Dashboard</h2>
+            <h2 id="pageTitle"></h2>
         </div>
         <div class="toolbar-search">
             <span class="material-symbols-outlined">search</span>
-            <input type="text" placeholder="Search medical records...">
+            <input type="text" placeholder="Search anything...">
             <button style="background: none; border: none;">
                 <span class="material-symbols-outlined">keyboard</span> + K
             </button>
@@ -453,147 +489,224 @@ $pagePath = __DIR__ . '/' . $base_path . '/' . $page . '.php';
 
     <div id="mySidenav" class="sidenav open">
         <div class="sidenav-header">
-            <h1><span class="doctor-site">Doctor</span> <span class="panel">Panel</span></h1>
+            <h1><span class="mf">MF</span> CLINIC</h1>
             <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
         </div>
         <div class="sidenav-content">
             <a href="?page=dashboard" class="sidenav-item">
                 <span class="material-symbols-outlined">home</span> Dashboard
             </a>
-            <a href="?page=appointments" class="sidenav-item">
+            <a href="?page=appointments" class="sidenav-item" onclick="toggleSubnav(this)">
                 <span class="material-symbols-outlined">calendar_today</span> Appointments
             </a>
+
             <a href="?page=patients" class="sidenav-item">
-                <span class="material-symbols-outlined">person</span> Patients
+                <span class="material-symbols-outlined">group</span> Patients
             </a>
-            <a href="?page=profile" class="sidenav-item">
-                <span class="material-symbols-outlined">account_circle</span> Profile
+            <a href="?page=medical_records" class="sidenav-item">
+                <span class="material-symbols-outlined">note</span> Medical Records
             </a>
-            <a href="?page=settings" class="sidenav-item">
-                <span class="material-symbols-outlined">settings</span> Settings
+            <a href="?page=billing_records" class="sidenav-item">
+                <span class="material-symbols-outlined">receipt</span> Billing Records
             </a>
+
         </div>
-        <div<div class="sidenav-footer">
-            <?php if (isset($doctorUser)): ?>
-                <div class="user-info">
-                    <img src="https://via.placeholder.com/30" alt="Doctor Avatar">
-                    <div class="user-details">
-                        <strong><?php echo htmlspecialchars($doctorUser['first_name'] . ' ' . $doctorUser['last_name']); ?></strong>
-                        <small>Doctor</small>
-                    </div>
+        <div class="sidenav-footer">
+            <div class="user-info">
+                <img src="<?php echo htmlspecialchars($profile_image); ?>" alt="User Avatar">
+                <div class="user-details">
+                    <strong><?php echo htmlspecialchars($doctor['first_name']); ?></strong>
+                    <small>Doctor</small>
                 </div>
-                <div class="sidenav-footer-options">
-                    <a href="?page=settings">
-                        <span class="material-symbols-outlined">settings</span>
-                        Settings
-                    </a>
-                    <a href="/logout.php">
-                        <span class="material-symbols-outlined">logout</span>
-                        Log Out
-                    </a>
-                </div>
-            <?php endif; ?>
-    </div>
+            </div>
+            <div class="sidenav-footer-options">
+                <a href="?page=settings">
+                    <span class="material-symbols-outlined">settings</span>
+                    Settings
+                </a>
+                <a href="/it38b-Enterprise/functions/logout.php">
+                    <span class="material-symbols-outlined">logout</span>
+                    Log Out
+                </a>
+            </div>
+        </div>
     </div>
     <div class="main open">
         <div class="maincontainer">
             <?php
+            $page_file = '';
             switch ($page) {
                 case 'dashboard':
-                    include __DIR__ . '/' . $base_path . '/dashboard.php';
+                    include('dashboard.php');
                     break;
                 case 'appointments':
-                    include DIR . '/' . $base_path . '/appointments.php';
+                    if ($view === 'schedule') {
+                        include('appointment_schedule.php');
+                    } elseif ($view === 'requests') {
+                        include('appointment_requests.php');
+                    } else {
+                        include('appointments.php');
+                    }
                     break;
                 case 'patients':
-                    include DIR . '/' . $base_path . '/patients.php';
+                    if ($view === 'details') {
+                        include('patient_details.php');
+                    } elseif ($view === 'add') {
+                        include('patient_add.php');
+                    } else {
+                        include('patients.php');
+                    }
                     break;
-                case 'profile':
-                    include DIR . '/' . $base_path . '/profile.php';
+                case 'medical_records':
+                    if ($view === 'details') {
+                        include('medical_records_details.php');
+                    } elseif ($view === 'create') {
+                        include('medical_records_create.php');
+                    } else {
+                        include('medical_records.php');
+                    }
+                    break;
+                case 'billing_records':
+                    if ($view === 'details') {
+                        include('billing_records_details.php');
+                    } else {
+                        include('billing_records.php');
+                    }
                     break;
                 case 'settings':
-                    include DIR . '/' . $base_path . '/settings.php';
-                    break;
-                case 'error':
-                    echo '&lt;div class="p-4">&lt;div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Error: Page not found.&lt;/div>&lt;/div>';
+                    include('settings.php');
                     break;
                 default:
-                    include DIR . '/' . $base_path . '/dashboard.php'; // Default to dashboard
+                    include('dashboard.php');
+            }
+
+            if (file_exists($page_file)) {
+                include $page_file;
+            } else {
+                echo '<div class="p-4"><div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">Page not found.</div></div>';
             }
             ?>
-            &lt;/div>
-            &lt;/div>
+        </div>
+    </div>
 
-            <script>
-                const sidenav = document.getElementById("mySidenav");
-                const main = document.querySelector(".main");
-                const toolbar = document.querySelector(".toolbar");
-                const pageTitleElement = document.getElementById("pageTitle");
-                const sidenavItems = document.querySelectorAll('.sidenav-item');
-                let isNavOpen = true;
+    <script>
+        const sidenav = document.getElementById("mySidenav");
+        const main = document.querySelector(".main");
+        const toolbar = document.querySelector(".toolbar");
+        const pageTitleElement = document.getElementById("pageTitle");
+        const sidenavItems = document.querySelectorAll('.sidenav-item');
+        const sidenavGroups = document.querySelectorAll('.sidenav-group');
+        let isNavOpen = true;
 
-                function openNav() {
-                    sidenav.classList.add("open");
-                    main.classList.add("open");
-                    toolbar.classList.add("open");
-                    isNavOpen = true;
+        function openNav() {
+            sidenav.classList.add("open");
+            main.classList.add("open");
+            toolbar.classList.add("open");
+            isNavOpen = true;
+        }
+
+        function closeNav() {
+            sidenav.classList.remove("open");
+            main.classList.remove("open");
+            toolbar.classList.remove("open");
+            isNavOpen = false;
+        }
+
+        function toggleNav() {
+            isNavOpen ? closeNav() : openNav();
+        }
+
+        function updateToolbarTitle() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const page = urlParams.get('page');
+            const view = urlParams.get('view');
+            if (pageTitleElement && page) {
+                let title = page.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+                if (view) {
+                    title += " - " + view.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+                }
+                pageTitleElement.textContent = title;
+            } else if (pageTitleElement) {
+                pageTitleElement.textContent = 'Dashboard';
+            }
+        }
+
+        function updateActiveLink() {
+            const currentUrl = window.location.href;
+
+            sidenavItems.forEach(item => {
+                item.classList.remove('active');
+                const href = item.getAttribute('href');
+                if (currentUrl.includes(href) && href !== '?page=') {
+                    item.classList.add('active');
+                }
+            });
+
+            sidenavGroups.forEach(group => {
+                const parentLink = group.querySelector('.sidenav-item');
+                const subnav = group.querySelector('.subnav');
+                const subnavLinks = subnav ? subnav.querySelectorAll('a') : [];
+                let isSubnavActive = false;
+                let isParentActive = false;
+
+                if (parentLink && currentUrl.includes(parentLink.getAttribute('href')) && parentLink.getAttribute('href') !== '?page=') {
+                    isParentActive = true;
                 }
 
-                function closeNav() {
-                    sidenav.classList.remove("open");
-                    main.classList.remove("open");
-                    toolbar.classList.remove("open");
-                    isNavOpen = false;
-                }
-
-                function toggleNav() {
-                    isNavOpen ? closeNav() : openNav();
-                }
-
-                function updateToolbarTitle() {
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const page = urlParams.get('page');
-                    if (pageTitleElement && page) {
-                        let title = page.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
-                        pageTitleElement.textContent = title;
-                    } else if (pageTitleElement) {
-                        pageTitleElement.textContent = 'Doctor Dashboard';
+                subnavLinks.forEach(subLink => {
+                    subLink.classList.remove('active');
+                    if (currentUrl.includes(subLink.getAttribute('href'))) {
+                        subLink.classList.add('active');
+                        isSubnavActive = true;
                     }
-                }
+                });
 
-                function updateActiveLink() {
-                    const currentUrl = window.location.href;
+                if (parentLink && subnav) {
+                    parentLink.classList.remove('active-parent');
+                    subnav.classList.remove('open');
 
-                    sidenavItems.forEach(item => {
-                        item.classList.remove('active');
-                        const href = item.getAttribute('href');
-                        if (currentUrl.includes(href) && href !== '?page=') {
-                            item.classList.add('active');
+                    if (isSubnavActive || isParentActive) {
+                        parentLink.classList.add('active-parent');
+                        subnav.classList.add('open');
+                        if (isParentActive && !isSubnavActive && subnavLinks.length > 0) {
+                            //do nothing.
                         }
-                    });
-                }
-
-                document.addEventListener('DOMContentLoaded', () => {
-                    openNav();
-                    updateToolbarTitle();
-                    updateActiveLink();
-                    updateMobileSearchPlaceholder();
-                });
-
-                window.addEventListener('popstate', () => {
-                    updateToolbarTitle();
-                    updateActiveLink();
-                });
-
-                function updateMobileSearchPlaceholder() {
-                    const searchInput = document.querySelector('.toolbar-search input');
-                    if (searchInput) {
-                        searchInput.placeholder = window.innerWidth <= 768 ? 'Search' : 'Search medical records...';
+                    } else if (currentUrl.includes(parentLink.getAttribute('href')) && subnavLinks.length === 0) {
+                        parentLink.classList.add('active');
                     }
                 }
+            });
+        }
+        function toggleSubnav(element) {
+            const parent = element.parentElement;  // Get the parent element
+            const subnav = parent.querySelector('.subnav'); // Find the subnav within the parent.
 
-                window.addEventListener('resize', updateMobileSearchPlaceholder);
-            </script>
+            if (subnav) {
+                subnav.classList.toggle('open');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            openNav();
+            updateToolbarTitle();
+            updateActiveLink();
+            updateMobileSearchPlaceholder();
+        });
+
+        window.addEventListener('popstate', () => {
+            updateToolbarTitle();
+            updateActiveLink();
+        });
+
+        function updateMobileSearchPlaceholder() {
+            const searchInput = document.querySelector('.toolbar-search input');
+            if (searchInput) {
+                searchInput.placeholder = window.innerWidth <= 768 ? 'Search' : 'Search anything...';
+            }
+        }
+
+        window.addEventListener('resize', updateMobileSearchPlaceholder);
+    </script>
 </body>
 
 </html>
