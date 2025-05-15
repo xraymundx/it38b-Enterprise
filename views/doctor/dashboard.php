@@ -42,9 +42,9 @@ $appointmentCounts = json_encode([]);
 
 // 1. Total Patients (patients who have appointments with this doctor)
 $totalPatientsQuery = "SELECT COUNT(DISTINCT p.patient_id) AS total_patients
-                            FROM appointments a
-                            JOIN patients p ON a.patient_id = p.patient_id
-                            WHERE a.doctor_id = ?";
+                                 FROM appointments a
+                                 JOIN patients p ON a.patient_id = p.patient_id
+                                 WHERE a.doctor_id = ?";
 $stmtTotalPatients = mysqli_prepare($conn, $totalPatientsQuery);
 if ($stmtTotalPatients) {
     mysqli_stmt_bind_param($stmtTotalPatients, "i", $doctorId);
@@ -63,9 +63,9 @@ if ($stmtTotalPatients) {
 // 2. Today's Appointments
 $today = date("Y-m-d");
 $todaysAppointmentsQuery = "SELECT COUNT(*) AS todays_appointments
-                                FROM appointments
-                                WHERE doctor_id = ?
-                                AND DATE(appointment_datetime) = ?";
+                                     FROM appointments
+                                     WHERE doctor_id = ?
+                                     AND DATE(appointment_datetime) = ?";
 $stmtTodaysAppointments = mysqli_prepare($conn, $todaysAppointmentsQuery);
 if ($stmtTodaysAppointments) {
     mysqli_stmt_bind_param($stmtTodaysAppointments, "is", $doctorId, $today);
@@ -83,9 +83,9 @@ if ($stmtTodaysAppointments) {
 
 // 3. Pending Appointment Requests (Assuming a status of 'Requested')
 $pendingRequestsQuery = "SELECT COUNT(*) AS pending_requests
-                                FROM appointments
-                                WHERE doctor_id = ?
-                                AND status = 'Requested'";
+                                     FROM appointments
+                                     WHERE doctor_id = ?
+                                     AND status = 'Requested'";
 $stmtPendingRequests = mysqli_prepare($conn, $pendingRequestsQuery);
 if ($stmtPendingRequests) {
     mysqli_stmt_bind_param($stmtPendingRequests, "i", $doctorId);
@@ -103,13 +103,13 @@ if ($stmtPendingRequests) {
 
 // 4. Today's Appointments List
 $todaysAppointmentsListQuery = "SELECT a.appointment_id, u.first_name AS patient_first_name, u.last_name AS patient_last_name,
-                                            DATE_FORMAT(a.appointment_datetime, '%h:%i %p') AS appointment_time, a.reason_for_visit, a.status, p.patient_id
-                                   FROM appointments a
-                                   JOIN patients p ON a.patient_id = p.patient_id
-                                   JOIN users u ON p.user_id = u.user_id
-                                   WHERE a.doctor_id = ?
-                                   AND DATE(a.appointment_datetime) = ?
-                                   ORDER BY a.appointment_datetime ASC";
+                                         DATE_FORMAT(a.appointment_datetime, '%h:%i %p') AS appointment_time, a.reason_for_visit, a.status, p.patient_id
+                                        FROM appointments a
+                                        JOIN patients p ON a.patient_id = p.patient_id
+                                        JOIN users u ON p.user_id = u.user_id
+                                        WHERE a.doctor_id = ?
+                                        AND DATE(a.appointment_datetime) = ?
+                                        ORDER BY a.appointment_datetime ASC";
 $stmtTodaysAppointmentsList = mysqli_prepare($conn, $todaysAppointmentsListQuery);
 if ($stmtTodaysAppointmentsList) {
     mysqli_stmt_bind_param($stmtTodaysAppointmentsList, "is", $doctorId, $today);
@@ -127,17 +127,17 @@ if ($stmtTodaysAppointmentsList) {
 
 // 5. Next Patient Details
 $nextAppointmentQuery = "SELECT a.appointment_id, p.patient_id, u.first_name, u.last_name, p.date_of_birth, p.gender,
-                                            pd.medical_record_number, u.phone_number, /* Changed from pd.phone_number to u.phone_number */
-                                            DATE_FORMAT(a.appointment_datetime, '%Y-%m-%d') AS next_appointment_date,
-                                            DATE_FORMAT(a.appointment_datetime, '%h:%i %p') AS next_appointment_time
-                               FROM appointments a
-                               JOIN patients p ON a.patient_id = p.patient_id
-                               JOIN users u ON p.user_id = u.user_id
-                               LEFT JOIN patient_descriptions pd ON p.patient_id = pd.patient_id
-                               WHERE a.doctor_id = ?
-                               AND a.appointment_datetime >= NOW()
-                               ORDER BY a.appointment_datetime ASC
-                               LIMIT 1";
+                                         pd.medical_record_number, u.phone_number, /* Changed from pd.phone_number to u.phone_number */
+                                         DATE_FORMAT(a.appointment_datetime, '%Y-%m-%d') AS next_appointment_date,
+                                         DATE_FORMAT(a.appointment_datetime, '%h:%i %p') AS next_appointment_time
+                                FROM appointments a
+                                JOIN patients p ON a.patient_id = p.patient_id
+                                JOIN users u ON p.user_id = u.user_id
+                                LEFT JOIN patient_descriptions pd ON p.patient_id = pd.patient_id
+                                WHERE a.doctor_id = ?
+                                AND a.appointment_datetime >= NOW()
+                                ORDER BY a.appointment_datetime ASC
+                                LIMIT 1";
 $stmtNextAppointment = mysqli_prepare($conn, $nextAppointmentQuery);
 if ($stmtNextAppointment) {
     mysqli_stmt_bind_param($stmtNextAppointment, "i", $doctorId);
@@ -156,10 +156,10 @@ if ($stmtNextAppointment) {
 // 6. Patient History Snippet (Example - adjust based on your tables and what you consider 'history')
 if ($nextPatient && isset($nextPatient['patient_id'])) {
     $historyQuery = "SELECT mr.diagnosis
-                                FROM medicalrecords mr
-                                WHERE mr.patient_id = ?
-                                ORDER BY mr.record_datetime DESC
-                                LIMIT 3";
+                                     FROM medicalrecords mr
+                                     WHERE mr.patient_id = ?
+                                     ORDER BY mr.record_datetime DESC
+                                     LIMIT 3";
     $stmtHistory = mysqli_prepare($conn, $historyQuery);
     if ($stmtHistory) {
         mysqli_stmt_bind_param($stmtHistory, "i", $nextPatient['patient_id']);
@@ -199,10 +199,10 @@ if ($reasonsStmt) {
 
 // 2. Patient Demographics (Gender)
 $genderQuery = "SELECT p.gender, COUNT(DISTINCT a.patient_id) AS count
-                    FROM appointments a
-                    JOIN patients p ON a.patient_id = p.patient_id
-                    WHERE a.doctor_id = ? AND p.gender IS NOT NULL
-                    GROUP BY p.gender";
+                     FROM appointments a
+                     JOIN patients p ON a.patient_id = p.patient_id
+                     WHERE a.doctor_id = ? AND p.gender IS NOT NULL
+                     GROUP BY p.gender";
 $genderStmt = mysqli_prepare($conn, $genderQuery);
 if ($genderStmt) {
     mysqli_stmt_bind_param($genderStmt, "i", $doctorId);
@@ -222,12 +222,12 @@ if ($genderStmt) {
 
 // 3. Appointment Trends Over Time
 $monthlyAppointmentsQuery = "SELECT
-                                    DATE_FORMAT(appointment_datetime, '%Y-%m') AS month,
-                                    COUNT(*) AS appointment_count
-                                FROM appointments
-                                WHERE doctor_id = ?
-                                GROUP BY month
-                                ORDER BY month";
+                                         DATE_FORMAT(appointment_datetime, '%Y-%m') AS month,
+                                         COUNT(*) AS appointment_count
+                                     FROM appointments
+                                     WHERE doctor_id = ?
+                                     GROUP BY month
+                                     ORDER BY month";
 $monthlyAppointmentsStmt = mysqli_prepare($conn, $monthlyAppointmentsQuery);
 if ($monthlyAppointmentsStmt) {
     mysqli_stmt_bind_param($monthlyAppointmentsStmt, "i", $doctorId);
@@ -249,6 +249,7 @@ if ($monthlyAppointmentsStmt) {
 mysqli_close($conn);
 ?>
 
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -260,6 +261,20 @@ mysqli_close($conn);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* Add fixed height to chart containers */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            /* Fixed height */
+            width: 100%;
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Keep existing styles, add responsive grid */
         .dashboard-card {
             border-radius: 0.5rem;
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
@@ -363,26 +378,26 @@ mysqli_close($conn);
                 <table class="min-w-full leading-normal">
                     <thead>
                         <tr>
-                            <thclass="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600
-                                uppercase tracking-wider">
+                            <th class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600
+                                        uppercase tracking-wider">
                                 Patient
-                                </thclass=>
-                                <th
-                                    class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Time
-                                </th>
-                                <th
-                                    class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Reason
-                                </th>
-                                <th
-                                    class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Status
-                                </th>
-                                <th
-                                    class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    Actions
-                                </th>
+                            </th>
+                            <th
+                                class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Time
+                            </th>
+                            <th
+                                class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Reason
+                            </th>
+                            <th
+                                class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th
+                                class="px-5 py-3 border-b-2 border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Actions
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -506,6 +521,7 @@ mysqli_close($conn);
             <p class="text-gray-600">No new notifications.</p>
         </div>
 
+        <!-- Modified Chart Sections -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <?php if (!empty($reasonsData)): ?>
                 <div class="chart-container">
@@ -513,37 +529,40 @@ mysqli_close($conn);
                     <canvas id="reasonsChart"></canvas>
                 </div>
                 <script>
-                    const reasonsChartCtx = document.getElementById('reasonsChart').getContext('2d');
-                    const reasonsChart = new Chart(reasonsChartCtx, {
-                        type: 'bar',
-                        data: {
-                            labels: <?php echo $reasonLabels; ?>,
-                            datasets: [{
-                                label: 'Number of Appointments',
-                                data: <?php echo $reasonCounts; ?>,
-                                backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                                borderColor: 'rgba(54, 162, 235, 1)',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Number of Appointments'
-                                    }
-                                },
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Reason for Visit'
+                    let reasonsChart;
+                    function initReasonsChart() {
+                        const ctx = document.getElementById('reasonsChart').getContext('2d');
+                        if (reasonsChart) reasonsChart.destroy(); // Destroy existing instance
+
+                        reasonsChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: <?php echo $reasonLabels; ?>,
+                                datasets: [{
+                                    label: 'Number of Appointments',
+                                    data: <?php echo $reasonCounts; ?>,
+                                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        title: { display: true, text: 'Number of Appointments' }
+                                    },
+                                    x: {
+                                        title: { display: true, text: 'Reason for Visit' },
+                                        ticks: { autoSkip: false }
                                     }
                                 }
                             }
-                        }
-                    });
+                        });
+                    }
+                    window.addEventListener('load', initReasonsChart);
                 </script>
             <?php endif; ?>
 
@@ -553,31 +572,37 @@ mysqli_close($conn);
                     <canvas id="genderChart"></canvas>
                 </div>
                 <script>
-                    const genderChartCtx = document.getElementById('genderChart').getContext('2d');
-                    const genderChart = new Chart(genderChartCtx, {
-                        type: 'pie',
-                        data: {
-                            labels: <?php echo $genderLabels; ?>,
-                            datasets: [{
-                                label: 'Number of Patients',
-                                data: <?php echo $genderCounts; ?>,
-                                backgroundColor: [
-                                    'rgba(255, 99, 132, 0.7)',
-                                    'rgba(54, 162, 235, 0.7)',
-                                    'rgba(255, 206, 86, 0.7)',
-                                    'rgba(75, 192, 192, 0.7)',
-                                    'rgba(153, 102, 255, 0.7)',
-                                    'rgba(255, 159, 64, 0.7)'
-                                ],
-                                borderColor: 'rgba(255, 255, 255, 1)',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false
-                        }
-                    });
+                    let genderChart;
+                    function initGenderChart() {
+                        const ctx = document.getElementById('genderChart').getContext('2d');
+                        if (genderChart) genderChart.destroy();
+
+                        genderChart = new Chart(ctx, {
+                            type: 'pie',
+                            data: {
+                                labels: <?php echo $genderLabels; ?>,
+                                datasets: [{
+                                    label: 'Number of Patients',
+                                    data: <?php echo $genderCounts; ?>,
+                                    backgroundColor: [
+                                        'rgba(255, 99, 132, 0.7)',
+                                        'rgba(54, 162, 235, 0.7)',
+                                        'rgba(255, 206, 86, 0.7)'
+                                    ],
+                                    borderColor: 'rgba(255, 255, 255, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { position: 'bottom' }
+                                }
+                            }
+                        });
+                    }
+                    window.addEventListener('load', initGenderChart);
                 </script>
             <?php endif; ?>
 
@@ -587,42 +612,52 @@ mysqli_close($conn);
                     <canvas id="monthlyAppointmentsChart"></canvas>
                 </div>
                 <script>
-                    const monthlyAppointmentsChartCtx = document.getElementById('monthlyAppointmentsChart').getContext('2d');
-                    const monthlyAppointmentsChart = new Chart(monthlyAppointmentsChartCtx, {
-                        type: 'line',
-                        data: {
-                            labels: <?php echo $months; ?>,
-                            datasets: [{
-                                label: 'Number of Appointments',
-                                data: <?php echo $appointmentCounts; ?>,
-                                fill: false,
-                                borderColor: 'rgba(75, 192, 192, 1)',
-                                tension: 0.1
-                            }]
-                        },
-                        options: {
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Number of Appointments'
-                                    }
-                                },
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Month'
+                    let monthlyAppointmentsChart;
+                    function initMonthlyAppointmentsChart() {
+                        const ctx = document.getElementById('monthlyAppointmentsChart').getContext('2d');
+                        if (monthlyAppointmentsChart) monthlyAppointmentsChart.destroy();
+
+                        monthlyAppointmentsChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: <?php echo $months; ?>,
+                                datasets: [{
+                                    label: 'Number of Appointments',
+                                    data: <?php echo $appointmentCounts; ?>,
+                                    fill: false,
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    tension: 0.1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        title: { display: true, text: 'Number of Appointments' }
+                                    },
+                                    x: {
+                                        title: { display: true, text: 'Month' },
+                                        ticks: { autoSkip: false }
                                     }
                                 }
                             }
-                        }
-                    });
+                        });
+                    }
+                    window.addEventListener('load', initMonthlyAppointmentsChart);
                 </script>
             <?php endif; ?>
         </div>
 
-    </div>
+        <!-- Add Resize Observer -->
+        <script>
+            new ResizeObserver(entries => {
+                initReasonsChart();
+                initGenderChart();
+                initMonthlyAppointmentsChart();
+            }).observe(document.body);
+        </script>
 </body>
 
 </html>
