@@ -2,10 +2,13 @@
 session_start();
 require_once '../config/config.php';
 
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
+// Check if user is logged in and has the required role
+if (
+    !isset($_SESSION['user_id']) || !isset($_SESSION['role']) ||
+    ($_SESSION['role'] !== 'nurse' && $_SESSION['role'] !== 'administrator' && $_SESSION['role'] !== 'patient' && $_SESSION['role'] !== 'doctor')
+) {
     http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized - Not logged in']);
+    echo json_encode(['error' => 'Unauthorized - Insufficient privileges']);
     exit();
 }
 

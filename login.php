@@ -16,7 +16,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         global $conn;
 
         // Prepare statement to prevent SQL injection
-        $stmt = $conn->prepare("SELECT * FROM users u LEFT JOIN roles r ON u.role_id = r.role_id WHERE u.email = ? LIMIT 1");
+        $stmt = $conn->prepare("
+            SELECT
+                u.user_id,
+                u.email,
+                u.password_hash,
+                r.role_name,
+                u.first_name,
+                u.last_name,
+                d.doctor_id
+            FROM users u
+            LEFT JOIN roles r ON u.role_id = r.role_id
+            LEFT JOIN doctors d ON u.user_id = d.user_id
+            WHERE u.email = ?
+            LIMIT 1
+        ");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -32,6 +46,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['first_name'] = $user['first_name'];
                 $_SESSION['last_name'] = $user['last_name'];
 
+                // Set role-specific identifier
+                switch ($_SESSION['role']) {
+                    case 'doctor':
+                        $_SESSION['doctor_id'] = $user['doctor_id']; // Store the doctor_id
+                        break;
+                    case 'admin':
+                        $_SESSION['admin_id'] = $user['user_id'];
+                        break;
+                    case 'patient':
+                        $_SESSION['patient_id'] = $user['user_id'];
+                        break;
+                    case 'nurse':
+                        $_SESSION['nurse_id'] = $user['user_id'];
+                        break;
+                }
                 // Update last login time
                 $updateStmt = $conn->prepare("UPDATE users SET last_login = NOW() WHERE user_id = ?");
                 $updateStmt->bind_param("i", $user['user_id']);
@@ -45,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $logStmt->bind_param("iss", $user['user_id'], $eventType, $description);
                 $logStmt->execute();
                 $logStmt->close();
+
 
                 // Redirect to dashboard
                 header('Location: routes/dashboard_router.php');

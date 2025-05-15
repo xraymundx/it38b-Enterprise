@@ -11,11 +11,6 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
     exit;
 }
 
-// Simulate the nurse user by hardcoding user ID and role for testing
-$userId = isset($_SESSION['userId']) ? $_SESSION['userId'] : 1; // Default to 1 for testing, simulate nurse
-
-// Simulate getting the user from the database based on userId
-// In a real scenario, this would be fetched from the database
 $user = User::fetchUser($userId);
 
 // Store the user in the session
@@ -25,11 +20,9 @@ $_SESSION['user'] = $user;
 if (isset($_SESSION['user'])) {
     $user = $_SESSION['user'];
 
-    // Get the user's role
+
     $role = $user->getRole();
 
-    // Simulate permissions for the logged-in user
-    $permissions = isset($roles[$role]) ? $roles[$role] : [];
 
     // Route based on the role
     switch ($role) {
